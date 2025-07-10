@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Data Editor</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css" />
+	<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/jerosoler/Drawflow@0.0.59/dist/drawflow.min.css">
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Game Data Editor</h1>
+        </header>
+        <nav class="tabs">
+            <button class="tab-button active" data-tab="items">Items</button>
+            <button class="tab-button" data-tab="creatures">Creatures</button>
+            <button class="tab-button" data-tab="npcs">NPCs</button>
+            <button class="tab-button" data-tab="dialogue">Dialogue</button>
+            <button class="tab-button" data-tab="quests">Quests</button>
+        </nav>
+        <main class="content">
+            <!-- Items Tab -->
+            <div id="items" class="tab-content active">
+                <div class="editor-panel">
+                    <div class="list-panel">
+                        <div class="list-header">
+                            <h2>All Items</h2>
+                            <button id="add-new-item-btn" class="button-primary">+</button>
+                        </div>
+                        <div id="item-list" class="item-list-container"></div>
+                    </div>
+                    <div class="detail-panel">
+                        <h2>Item Details</h2>
+                        <form id="item-form" class="item-form">
+                            <div class="form-group">
+                                <label for="itemId">ID (Read-only)</label>
+                                <input type="text" id="itemId" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="itemName">Name</label>
+                                <input type="text" id="itemName" placeholder="e.g., Iron Longsword">
+                            </div>
+                            <div class="category-row">
+                                <div class="form-group"><label for="itemCategory">Category</label><select id="itemCategory"></select></div>
+                                <div class="form-group"><label for="itemSubCategory">Sub-Category</label><select id="itemSubCategory"></select></div>
+                                <div class="form-group"><label for="itemType">Type</label><select id="itemType"></select></div>
+                            </div>
+                            <hr>
+                            <div class="form-group form-group-half"><label for="itemDamage">Damage</label><input type="number" id="itemDamage" value="0"></div>
+                            <div class="form-group form-group-half"><label for="itemWeight">Weight</label><input type="number" id="itemWeight" value="0" step="0.1"></div>
+                            <div class="form-group form-group-half"><label for="itemValue">Value</label><input type="number" id="itemValue" value="0"></div>
+                            <div class="form-group form-group-half"><label for="itemCharge">Charge</label><input type="number" id="itemCharge" value="0"></div>
+                            <div class="form-group form-group-half"><label for="itemAffinity">Affinity</label><select id="itemAffinity"></select></div>
+                            <details class="collapsible-section">
+                                <summary>Description</summary>
+                                <div class="collapsible-content">
+                                    <div class="form-group"><label for="descCommon">Common Knowledge</label><textarea id="descCommon" rows="3"></textarea></div>
+                                    <div class="form-group"><label for="descLearned">Learned Knowledge</label><textarea id="descLearned" rows="3"></textarea></div>
+                                    <div class="form-group"><label for="descForgotten">Forgotten Knowledge</label><textarea id="descForgotten" rows="3"></textarea></div>
+                                </div>
+                            </details>
+                            <details class="collapsible-section"><summary>Effects</summary><div class="collapsible-content"><p class="placeholder-text">Effect controls will be implemented later.</p></div></details>
+                            <details class="collapsible-section"><summary>Quests</summary><div class="collapsible-content"><p class="placeholder-text">Quests controls will be implemented later.</p></div></details>
+							<details class="collapsible-section"><summary>Owners</summary><div id="item-owners-list" class="collapsible-content"></div></details>
+                        </form>
+                         <div class="detail-panel-footer">
+                            <button id="delete-item-btn" class="button-danger">Delete Item</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NPCs Tab -->
+            <div id="npcs" class="tab-content">
+                <div class="editor-panel">
+                    <div class="list-panel">
+                        <div class="list-header">
+                            <h2>All NPCs</h2>
+                            <button id="add-new-npc-btn" class="button-primary">+</button>
+                        </div>
+                        <div id="npc-list" class="item-list-container"></div>
+                    </div>
+                    <div class="detail-panel">
+                        <h2>NPC Details</h2>
+                        <form id="npc-form" class="item-form">
+                            <div class="form-group">
+                                <label for="npcId">ID (Read-only)</label>
+                                <input type="text" id="npcId" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="npcName">Name</label>
+                                <input type="text" id="npcName" placeholder="e.g., Balgruuf the Greater">
+                            </div>
+                            <div class="category-row">
+                                <div class="form-group"><label for="npcRace">Race</label><select id="npcRace"></select></div>
+                                <div class="form-group"><label for="npcClass">Class</label><select id="npcClass"></select></div>
+                            </div>
+                            <hr>
+                            <div class="form-group form-group-third"><label for="npcStatStr">Strength</label><input type="number" id="npcStatStr" value="10"></div>
+                            <div class="form-group form-group-third"><label for="npcStatInt">Intelligence</label><input type="number" id="npcStatInt" value="10"></div>
+                            <div class="form-group form-group-third"><label for="npcStatWis">Wisdom</label><input type="number" id="npcStatWis" value="10"></div>
+                            <div class="form-group form-group-third"><label for="npcStatAgi">Agility</label><input type="number" id="npcStatAgi" value="10"></div>
+                            <div class="form-group form-group-third"><label for="npcStatDex">Dexterity</label><input type="number" id="npcStatDex" value="10"></div>
+                            <div class="form-group form-group-third"><label for="npcStatCha">Charisma</label><input type="number" id="npcStatCha" value="10"></div>
+                             <div class="form-group form-group-half"><label for="npcAffinity">Affinity</label><select id="npcAffinity"></select></div>
+                            
+                            <details class="collapsible-section" open>
+                                <summary>Inventory</summary>
+                                <div class="collapsible-content">
+                                    <div id="npc-inventory-list" class="inventory-list"></div>
+                                    <div class="inventory-add-controls">
+                                        <select id="npc-inventory-add-select"></select>
+                                        <input type="number" id="npc-inventory-add-qty" class="inventory-qty-input" value="1" min="1">
+                                        <button type="button" id="npc-inventory-add-btn" class="button-primary">Add Item</button>
+                                    </div>
+                                </div>
+                            </details>
+                            <details class="collapsible-section"><summary>Spells</summary><div class="collapsible-content"><p class="placeholder-text">Spell controls will be implemented later.</p></div></details>
+                            <details class="collapsible-section"><summary>Quests</summary><div class="collapsible-content"><p class="placeholder-text">Quests controls will be implemented later.</p></div></details>
+                        </form>
+                         <div class="detail-panel-footer">
+                            <button id="delete-npc-btn" class="button-danger">Delete NPC</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="creatures" class="tab-content">
+                <div class="editor-panel">
+                    <div class="list-panel">
+                        <div class="list-header">
+                            <h2>All Creatures</h2>
+                            <button id="add-new-creature-btn" class="button-primary">+</button>
+                        </div>
+                        <div id="creature-list" class="item-list-container"></div>
+                    </div>
+                    <div class="detail-panel">
+                        <h2>Creature Details</h2>
+                        <form id="creature-form" class="item-form">
+                            <div class="form-group">
+                                <label for="creatureId">ID (Read-only)</label>
+                                <input type="text" id="creatureId" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="creatureName">Name</label>
+                                <input type="text" id="creatureName" placeholder="e.g., Cave Troll">
+                            </div>
+                            <hr>
+                            <div class="form-group form-group-third"><label for="creatureStatStr">Strength</label><input type="number" id="creatureStatStr" value="10"></div>
+                            <div class="form-group form-group-third"><label for="creatureStatInt">Intelligence</label><input type="number" id="creatureStatInt" value="10"></div>
+                            <div class="form-group form-group-third"><label for="creatureStatWis">Wisdom</label><input type="number" id="creatureStatWis" value="10"></div>
+                            <div class="form-group form-group-third"><label for="creatureStatAgi">Agility</label><input type="number" id="creatureStatAgi" value="10"></div>
+                            <div class="form-group form-group-third"><label for="creatureStatDex">Dexterity</label><input type="number" id="creatureStatDex" value="10"></div>
+                            <div class="form-group form-group-third"><label for="creatureStatCha">Charisma</label><input type="number" id="creatureStatCha" value="10"></div>
+                            <div class="form-group form-group-half"><label for="creatureAffinity">Affinity</label><select id="creatureAffinity"></select></div>
+                            <div class="form-group form-group-half"><label for="creatureWeakness">Weakness</label><select id="creatureWeakness"></select></div>
+                            
+                            <details class="collapsible-section" open>
+                                <summary>Inventory</summary>
+                                <div class="collapsible-content">
+                                    <div id="creature-inventory-list" class="inventory-list"></div>
+                                    <div class="inventory-add-controls">
+                                        <select id="creature-inventory-add-select"></select>
+                                        <input type="number" id="creature-inventory-add-qty" class="inventory-qty-input" value="1" min="1">
+                                        <button type="button" id="creature-inventory-add-btn" class="button-primary">Add Item</button>
+                                    </div>
+                                </div>
+                            </details>
+                        </form>
+                         <div class="detail-panel-footer">
+                            <button id="delete-creature-btn" class="button-danger">Delete Creature</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+			<div id="dialogue" class="tab-content">
+				<div class="editor-panel dialogue-editor-panel">
+					<!-- Panel 1: Characters -->
+					<div class="list-panel">
+						<div class="list-header">
+							<h2>All Characters</h2>
+						</div>
+						<div id="dialogue-character-list" class="item-list-container"></div>
+					</div>
+
+					<!-- Panel 2: Topics -->
+					<div class="list-panel">
+						<div class="list-header">
+							<h2>Dialogue Topics</h2>
+							<button id="add-new-topic-btn" class="button-primary" disabled>+</button>
+						</div>
+						<div id="dialogue-topic-list" class="item-list-container"></div>
+					</div>
+
+					<!-- Panel 3: Canvas -->
+					<div class="dialogue-canvas-container">
+						<div class="canvas-header">
+							<button id="add-npc-node-btn" class="button-primary" disabled>NPC</button>
+							<button id="add-player-node-btn" class="button-primary" disabled>Player</button>
+						</div>
+						<!-- THIS IS THE ONLY PART THAT CHANGES IN THE CANVAS -->
+						<div id="drawflow"></div>
+					</div>
+				</div>
+			</div>
+            <div id="quests" class="tab-content"><h2>Quests Editor - Coming Soon!</h2></div>
+        </main>
+        <footer class="app-footer">
+            <button id="save-all-btn" class="">Save All Changes</button>
+        </footer>
+    </div>
+
+<!-- The Details Panel -->
+<div id="dialogue-details-panel" class="dialogue-details-panel-container hidden">
+    <div class="details-panel-header">
+        <h3 id="details-panel-title">Node Details</h3>
+        <button id="details-panel-close-btn">×</button>
+    </div>
+    <div id="details-panel-content" class="details-panel-content">
+        <!-- Content is built dynamically -->
+    </div>
+</div>
+
+<div id="custom-context-menu" class="context-menu" style="display: none;">
+    <ul>
+        <li data-action="delete-topic">Delete Topic</li>
+        <li data-action="delete-logic">Delete Logic</li>
+    </ul>
+</div>
+    <script src="main.js"></script>
+    <script src="items.js"></script>
+    <script src="npcs.js"></script>
+	<script src="creatures.js"></script>
+	<script src="dialogue.js"></script>
+	<script src="https://cdn.jsdelivr.net/gh/jerosoler/Drawflow@0.0.59/dist/drawflow.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js" async></script>
+</body>
+</html>

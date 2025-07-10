@@ -1,0 +1,22 @@
+﻿{
+  "item_black_ice": {
+    "common": "Aa",
+    "learned": "Bb",
+    "forgotten": "Cc"
+  },
+  "item_black_ice_01": {
+    "common": "",
+    "learned": "",
+    "forgotten": ""
+  },
+  "item_black_lotus": {
+    "common": "",
+    "learned": "",
+    "forgotten": ""
+  },
+  "item_green_leaf": {
+    "common": "",
+    "learned": "",
+    "forgotten": ""
+  }
+}

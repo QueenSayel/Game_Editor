@@ -1,0 +1,69 @@
+﻿[
+  {
+    "id": "npc_grundir",
+    "name": "Grundir",
+    "race": "Orc",
+    "class": "Warrior",
+    "affinity": "None",
+    "stats": {
+      "strength": 10,
+      "intelligence": 12,
+      "wisdom": 10,
+      "agility": 12,
+      "dexterity": 10,
+      "charisma": 10
+    },
+    "inventory": [
+      {
+        "id": "item_black_ice_01",
+        "quantity": 6
+      },
+      {
+        "id": "item_black_lotus",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "npc_arwena",
+    "name": "Arwena",
+    "race": "Human",
+    "class": "Ranger",
+    "affinity": "Water",
+    "stats": {
+      "strength": 10,
+      "intelligence": 10,
+      "wisdom": 10,
+      "agility": 55,
+      "dexterity": 10,
+      "charisma": 10
+    },
+    "inventory": [
+      {
+        "id": "item_black_lotus",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "id": "npc_sen",
+    "name": "Sen",
+    "race": "Human",
+    "class": "Warrior",
+    "affinity": "None",
+    "stats": {
+      "strength": 10,
+      "intelligence": 10,
+      "wisdom": 10,
+      "agility": 10,
+      "dexterity": 10,
+      "charisma": 10
+    },
+    "inventory": [
+      {
+        "id": "item_black_lotus",
+        "quantity": 1
+      }
+    ]
+  }
+]

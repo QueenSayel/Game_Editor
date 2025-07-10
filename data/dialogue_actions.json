@@ -1,0 +1,44 @@
+{
+  "actions": [
+    {
+      "type": "give_item",
+      "label": "Give Item",
+      "params": [
+        { "name": "itemId", "type": "select", "source": "items", "label": "Item" },
+        { "name": "quantity", "type": "number", "default": 1, "label": "Quantity" }
+      ]
+    },
+    {
+      "type": "take_item",
+      "label": "Take Item",
+      "params": [
+        { "name": "itemId", "type": "select", "source": "items", "label": "Item" },
+        { "name": "quantity", "type": "number", "default": 1, "label": "Quantity" }
+      ]
+    },
+    {
+      "type": "set_quest_stage",
+      "label": "Set Quest Stage",
+      "params": [
+        { "name": "questId", "type": "select", "source": "quests", "label": "Quest" },
+        { "name": "stage", "type": "number", "default": 10, "label": "Stage ID" }
+      ]
+    },
+    {
+      "type": "set_flag",
+      "label": "Set Flag",
+      "params": [
+        { "name": "flagId", "type": "text", "placeholder": "e.g., betrayed_jarl", "label": "Flag ID" },
+        { "name": "value", "type": "select", "options": ["true", "false"], "label": "Set To" }
+      ]
+    },
+    {
+      "type": "modify_reputation",
+      "label": "Modify Reputation",
+      "params": [
+        { "name": "factionId", "type": "text", "placeholder": "e.g., whiterun_hold", "label": "Faction ID" },
+        { "name": "amount", "type": "number", "default": 5, "label": "Amount" }
+      ]
+    }
+  ]
+}

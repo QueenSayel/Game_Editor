@@ -1,0 +1,38 @@
+{
+  "Weapon": {
+    "Sword": ["Shortsword", "Longsword", "Broadsword", "Katana", "Claymore"],
+    "Axe": ["War Axe", "Battle Axe", "Throwing Axe"],
+    "Blunt": ["Mace", "Warhammer", "Club"],
+    "Polearm": ["Spear", "Halberd", "Glaive"],
+    "Bow": ["Shortbow", "Longbow", "Composite Bow"],
+    "Dagger": ["Dagger", "Tanto", "Kris"]
+  },
+  "Armor": {
+    "Heavy": ["Cuirass", "Greaves", "Helmet", "Gauntlets", "Boots", "Pauldron"],
+    "Medium": ["Cuirass", "Greaves", "Helmet", "Gloves", "Boots"],
+    "Light": ["Cuirass", "Leggings", "Hood", "Gloves", "Boots"]
+  },
+  "Shield": {
+    "Heavy": ["Tower Shield", "Kite Shield"],
+    "Light": ["Round Shield", "Buckler"]
+  },
+  "Apparel": {
+    "Clothing": ["Robe", "Tunic", "Shirt", "Pants", "Skirt", "Shoes", "Gloves", "Hat"],
+    "Jewelry": ["Ring", "Amulet", "Circlet", "Bracelet"]
+  },
+  "Consumable": {
+    "Potion": ["Health", "Magicka", "Stamina", "Cure Disease", "Invisibility", "Resist Element"],
+    "Food": ["Cooked Meat", "Bread", "Fruit", "Vegetable"],
+    "Ingredient": ["Plant", "Fungus", "Creature Part", "Mineral"]
+  },
+  "Book": {
+    "Tome": ["Spell Tome", "Skill Book"],
+    "Readable": ["Journal", "Note", "Common Book", "Recipe"]
+  },
+  "Misc": {
+    "Tool": ["Lockpick", "Probe", "Repair Hammer", "Alchemical Set"],
+    "Gemstone": ["Ruby", "Sapphire", "Diamond", "Emerald"],
+    "Soul Gem": ["Petty", "Lesser", "Common", "Greater", "Grand", "Black"],
+    "Key": ["Generic Key", "Dungeon Key", "House Key"]
+  }
+}

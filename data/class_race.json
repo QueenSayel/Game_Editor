@@ -1,0 +1,21 @@
+{
+    "races": [
+        "Human",
+        "Elf",
+        "Dwarf",
+        "Orc",
+        "Goblin",
+        "Halfling"
+    ],
+    "classes": [
+        "Warrior",
+        "Mage",
+        "Rogue",
+        "Cleric",
+        "Ranger",
+        "Blacksmith",
+        "Merchant",
+        "Guard",
+        "Noble"
+    ]
+}

@@ -1,0 +1,58 @@
+﻿[
+  {
+    "id": "item_black_ice",
+    "name": "Black Ice",
+    "category": "Weapon",
+    "subCategory": "Sword",
+    "type": "Shortsword",
+    "stats": {
+      "damage": 1,
+      "weight": 0.1,
+      "value": 1,
+      "charge": 1,
+      "affinity": "Divine"
+    }
+  },
+  {
+    "id": "item_black_ice_01",
+    "name": "Black Ice",
+    "category": "Weapon",
+    "subCategory": "Sword",
+    "type": "Shortsword",
+    "stats": {
+      "damage": 10,
+      "weight": 1,
+      "value": 3,
+      "charge": 3,
+      "affinity": "Frost"
+    }
+  },
+  {
+    "id": "item_black_lotus",
+    "name": "Black Lotus",
+    "category": "Consumable",
+    "subCategory": "Ingredient",
+    "type": "Plant",
+    "stats": {
+      "damage": 0,
+      "weight": 0,
+      "value": 0,
+      "charge": 0,
+      "affinity": "None"
+    }
+  },
+  {
+    "id": "item_green_leaf",
+    "name": "Green Leaf",
+    "category": "Consumable",
+    "subCategory": "Ingredient",
+    "type": "Plant",
+    "stats": {
+      "damage": 0,
+      "weight": 0,
+      "value": 0,
+      "charge": 0,
+      "affinity": "None"
+    }
+  }
+]

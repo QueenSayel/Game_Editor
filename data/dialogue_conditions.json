@@ -1,0 +1,84 @@
+{
+  "conditions": [
+    {
+      "type": "has_item",
+      "label": "Player Has Item",
+      "description": "Checks if the player has a certain quantity of a specific item.",
+      "params": [
+        { "name": "itemId", "type": "select", "source": "items", "label": "Item" },
+        { "name": "operator", "type": "select", "options": ["eq", "neq", "gt", "gte", "lt", "lte"], "label": "Operator" },
+        { "name": "value", "type": "number", "default": 1, "label": "Quantity" }
+      ]
+    },
+    {
+      "type": "has_quest",
+      "label": "Player Has Quest",
+      "description": "Checks if the player has started a specific quest (i.e., has any stage for it).",
+      "params": [
+        { "name": "questId", "type": "select", "source": "quests", "label": "Quest" }
+      ]
+    },
+    {
+      "type": "has_quest_stage",
+      "label": "Player Has Quest Stage",
+      "description": "Checks if the player is currently on a specific stage of a quest.",
+      "params": [
+        { "name": "questId", "type": "select", "source": "quests", "label": "Quest" },
+        { "name": "stage", "type": "number", "default": 10, "label": "Stage ID" }
+      ]
+    },
+    {
+      "type": "has_skill",
+      "label": "Player Skill Level",
+      "description": "Checks if a player's skill (e.g., Speech, Strength) meets a certain level.",
+      "params": [
+        { "name": "skill", "type": "select", "options": ["Strength", "Intelligence", "Wisdom", "Agility", "Dexterity", "Charisma", "Speech"], "label": "Skill" },
+        { "name": "operator", "type": "select", "options": ["eq", "neq", "gt", "gte", "lt", "lte"], "label": "Operator" },
+        { "name": "value", "type": "number", "default": 10, "label": "Level" }
+      ]
+    },
+    {
+      "type": "flag_is",
+      "label": "Game Flag Is",
+      "description": "Checks the state of a global game flag.",
+      "params": [
+        { "name": "flagId", "type": "text", "placeholder": "e.g., knows_secret_passage", "label": "Flag ID" },
+        { "name": "value", "type": "select", "options": ["true", "false"], "label": "State" }
+      ]
+    },
+    {
+      "type": "character_affinity",
+      "label": "Character Affinity",
+      "description": "Checks the player's affinity/reputation with a specific character.",
+      "params": [
+        { "name": "characterId", "type": "select", "source": "all_characters", "label": "Character" },
+        { "name": "operator", "type": "select", "options": ["eq", "neq", "gt", "gte", "lt", "lte"], "label": "Operator" },
+        { "name": "value", "type": "number", "default": 0, "label": "Affinity Level" }
+      ]
+    },
+    {
+      "type": "is_character_type",
+      "label": "Is Character Type",
+      "description": "Checks if the character initiating the dialogue is of a certain type.",
+      "params": [
+        { "name": "characterType", "type": "select", "options": ["npc", "creature"], "label": "Character Type" }
+      ]
+    },
+    {
+      "type": "character_is",
+      "label": "Character Is",
+      "description": "Checks if the character initiating the dialogue is a specific person.",
+      "params": [
+        { "name": "characterId", "type": "select", "source": "all_characters", "label": "Character" }
+      ]
+    }
+  ],
+  "operators": {
+    "eq": "==",
+    "neq": "!=",
+    "gt": ">",
+    "gte": ">=",
+    "lt": "<",
+    "lte": "<="
+  }
+}

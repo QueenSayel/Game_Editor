@@ -1,0 +1,42 @@
+﻿{
+  "npc_arwena": {},
+  "npc_grundir": {
+    "topic_crest_1752089985095": {
+      "topicName": "Crest",
+      "drawflow": {
+        "drawflow": {
+          "Home": {
+            "data": {
+              "1": {
+                "id": 1,
+                "name": "npc-node",
+                "data": {
+                  "text": "Hello",
+                  "logic": [
+                    "has.item(item_black_lotus)"
+                  ]
+                },
+                "class": "npc-node",
+                "html": "\n            <div class=\"dialogue-node-header\">\n                NPC Node <span class=\"node-badge npc-badge\">NPC</span>\n            </div>\n            <div class=\"dialogue-node-content\"><p>Hello</p></div>\n        ",
+                "typenode": false,
+                "inputs": {
+                  "input_1": {
+                    "connections": []
+                  }
+                },
+                "outputs": {
+                  "output_1": {
+                    "connections": []
+                  }
+                },
+                "pos_x": 81,
+                "pos_y": 80
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "creature_sairento": {}
+}
