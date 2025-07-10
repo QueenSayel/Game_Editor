@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- CONFIGURATION ---
-    const API_URL_CREATURES = 'http://localhost:8080/creatures';
+    const API_URL_CREATURES = '/.netlify/functions/creatures';
     const AFFINITY_OPTIONS = ["None", "Frost", "Fire", "Lightning", "Water", "Divine", "Chaos"];
 
     // --- STATE MANAGEMENT ---
