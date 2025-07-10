@@ -6,12 +6,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- STATE MANAGEMENT ---
     let allNpcs = [];
-    let classRaceData = { races: [], classes: [] };
     let allItems = [];
     let selectedNpcId = null;
     let localUnsavedChanges = false;
-
-    // --- DOM ELEMENTS ---
+    // NOTE: classRaceData is no longer a global variable in this module
+    
+    // --- DOM ELEMENTS (Identical to before) ---
     const npcListContainer = document.getElementById('npc-list');
     const npcForm = document.getElementById('npc-form');
     const addNewNpcBtn = document.getElementById('add-new-npc-btn');
@@ -29,25 +29,26 @@ document.addEventListener('DOMContentLoaded', () => {
         dex: document.getElementById('npcStatDex'), cha: document.getElementById('npcStatCha'),
         affinity: document.getElementById('npcAffinity'),
     };
-
-    // --- DATA HANDLING ---
+    
+    // --- DATA HANDLING (Slightly modified) ---
     const loadNpcs = async () => {
         const response = await fetch(API_URL_NPCS);
         if (!response.ok) throw new Error('Failed to fetch NPCs.');
         let loadedNpcs = await response.json();
-        
         loadedNpcs.forEach(npc => {
             if (npc.inventory && npc.inventory.length > 0 && typeof npc.inventory[0] === 'string') {
                 npc.inventory = npc.inventory.map(itemId => ({ id: itemId, quantity: 1 }));
             }
         });
-        allNpcs = loadedNpcs;
+        allNpcs = loadedNpcs; // Assign to global state
     };
+    
     const loadClassRaceData = async () => {
         const response = await fetch(API_URL_CLASS_RACE);
         if (!response.ok) throw new Error('Failed to fetch class/race data.');
-        classRaceData = await response.json();
+        return response.json(); // Return the data instead of assigning globally
     };
+    
     const saveNpcs = async () => {
         const response = await fetch(API_URL_NPCS, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -56,16 +57,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!response.ok) throw new Error('Failed to save NPCs.');
     };
 
-    // --- UI RENDERING & MANAGEMENT ---
+    // --- UI RENDERING & MANAGEMENT (Identical to before) ---
     const setUnsaved = () => {
         localUnsavedChanges = true;
         window.App.DataManager.setUnsavedChanges(true);
     };
-
     const notifyNpcDataChanged = () => {
         document.dispatchEvent(new CustomEvent('npcDataChanged'));
     };
-    
     const renderNpcList = () => {
         const sortedNpcs = [...allNpcs].sort((a, b) => a.name.localeCompare(b.name));
         npcListContainer.innerHTML = '';
@@ -87,28 +86,23 @@ document.addEventListener('DOMContentLoaded', () => {
         selectEl.innerHTML = `<option value="">-- ${placeholder} --</option>`;
         options.forEach(opt => selectEl.add(new Option(opt.text, opt.value)));
     };
-    
-    // UPDATED: This function will now be called only after item data is ready.
     const initializeItemDependentUI = () => {
         allItems = window.App.Items.getAllItems();
         populateInventoryItemDropdown();
-        // If an NPC is already selected, re-render its form to show correct item names
         if (selectedNpcId) {
             const currentNpc = allNpcs.find(n => n.id === selectedNpcId);
             populateForm(currentNpc);
         }
     };
-
     const populateInventoryItemDropdown = () => {
         const sortedItems = [...allItems].sort((a,b) => a.name.localeCompare(b.name));
         inventoryAddSelect.innerHTML = '<option value="">-- Select an Item --</option>';
         sortedItems.forEach(item => {
-            if (!item.id || item.id.startsWith('temp_')) return; // Don't add unsaved items
+            if (!item.id || item.id.startsWith('temp_')) return;
             const displayText = `${item.name} [${item.id}]`;
             inventoryAddSelect.add(new Option(displayText, item.id));
         });
     };
-    
     const renderInventoryList = (inventory = []) => {
         inventoryListDiv.innerHTML = '';
         if (inventory.length === 0) {
@@ -126,7 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             inventoryListDiv.appendChild(itemEl);
         });
-        
         document.querySelectorAll('.remove-inventory-item-btn').forEach(btn => {
             btn.addEventListener('click', (e) => removeInventoryItem(parseInt(e.target.dataset.index, 10)));
         });
@@ -138,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     };
-
     const populateForm = (npc) => {
         npcForm.style.visibility = npc ? 'visible' : 'hidden';
         deleteNpcBtn.style.visibility = npc ? 'visible' : 'hidden';
@@ -157,31 +149,23 @@ document.addEventListener('DOMContentLoaded', () => {
         renderInventoryList(npc.inventory);
     };
 
-    // --- ACTIONS & EVENT HANDLERS ---
+    // --- ACTIONS & EVENT HANDLERS (Identical to before) ---
     const generateUniqueId = (name, currentIdToIgnore = null) => {
         const baseId = 'npc_' + name.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
         if (!allNpcs.some(n => n.id === baseId && n.id !== currentIdToIgnore)) return baseId;
         let counter = 1;
-        while (true) {
-            let newId = `${baseId}_${String(counter).padStart(2, '0')}`;
-            if (!allNpcs.some(n => n.id === newId && n.id !== currentIdToIgnore)) return newId;
-            counter++;
-        }
+        while (true) { let newId = `${baseId}_${String(counter).padStart(2, '0')}`; if (!allNpcs.some(n => n.id === newId && n.id !== currentIdToIgnore)) return newId; counter++; }
     };
     const selectNpc = (id) => {
         selectedNpcId = id;
         populateForm(allNpcs.find(n => n.id === id));
         renderNpcList();
     };
-    
     const selectNpcById = (npcId) => {
         const npcTabButton = document.querySelector('button[data-tab="npcs"]');
-        if (npcTabButton && !npcTabButton.classList.contains('active')) {
-            npcTabButton.click();
-        }
+        if (npcTabButton && !npcTabButton.classList.contains('active')) { npcTabButton.click(); }
         selectNpc(npcId);
     };
-
     const deleteSelectedNpc = () => {
         if (!selectedNpcId || !confirm('Are you sure you want to delete this NPC?')) return;
         allNpcs = allNpcs.filter(n => n.id !== selectedNpcId);
@@ -207,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
         notifyNpcDataChanged();
         formFields.id.value = newId.startsWith('temp_') ? '' : newId;
     };
-    const addNewNpc = () => {
+    const addNewNpc = (classRaceData) => { // Pass data in
         const tempId = `temp_${Date.now()}`;
         const newNpc = { id: tempId, name: "", race: classRaceData.races[0] || "", class: classRaceData.classes[0] || "", affinity: "None", stats: { strength: 10, intelligence: 10, wisdom: 10, agility: 10, dexterity: 10, charisma: 10 }, inventory: [] };
         allNpcs.push(newNpc);
@@ -221,18 +205,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (npcIndex === -1) return;
         const itemId = inventoryAddSelect.value;
         const quantity = parseInt(inventoryAddQty.value, 10);
-        if (!itemId || !quantity || quantity < 1) {
-            alert("Please select an item and enter a valid quantity (1 or more).");
-            return;
-        }
+        if (!itemId || !quantity || quantity < 1) { alert("Please select an item and enter a valid quantity (1 or more)."); return; }
         const npc = allNpcs[npcIndex];
         if (!npc.inventory) npc.inventory = [];
         const existingItem = npc.inventory.find(invItem => invItem.id === itemId);
-        if (existingItem) {
-            existingItem.quantity += quantity;
-        } else {
-            npc.inventory.push({ id: itemId, quantity: quantity });
-        }
+        if (existingItem) { existingItem.quantity += quantity; } else { npc.inventory.push({ id: itemId, quantity: quantity }); }
         renderInventoryList(npc.inventory);
         setUnsaved();
         notifyNpcDataChanged();
@@ -252,42 +229,46 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!selectedNpcId) return;
         const npcIndex = allNpcs.findIndex(n => n.id === selectedNpcId);
         if (npcIndex === -1) return;
-        if (isNaN(newQuantity) || newQuantity < 1) {
-            newQuantity = 1;
-            inputElement.value = newQuantity;
-        }
+        if (isNaN(newQuantity) || newQuantity < 1) { newQuantity = 1; inputElement.value = newQuantity; }
         allNpcs[npcIndex].inventory[index].quantity = newQuantity;
         setUnsaved();
         notifyNpcDataChanged();
     };
 
-    // --- INITIALIZATION ---
+    // --- INITIALIZATION (THIS IS THE MAIN CHANGE) ---
     const initializeEditor = async () => {
         try {
-            // Register the module object immediately
             window.App.Npcs = {
-                save: async () => {
-                    if (allNpcs.some(n => n.id.startsWith('temp_'))) {
-                        throw new Error("Cannot save NPCs. Please provide a name for all new NPCs first.");
-                    }
-                    await saveNpcs();
-                    localUnsavedChanges = false;
-                },
+                save: async () => { if (allNpcs.some(n => n.id.startsWith('temp_'))) { throw new Error("Cannot save NPCs. Please provide a name for all new NPCs first."); } await saveNpcs(); localUnsavedChanges = false; },
                 hasUnsavedChanges: () => localUnsavedChanges,
                 getAllNpcs: () => allNpcs,
                 selectNpcById: selectNpcById
             };
 
-            await Promise.all([loadClassRaceData(), loadNpcs()]);
+            // 1. Fetch all data first and store results in local variables.
+            const [classRaceData, _] = await Promise.all([
+                loadClassRaceData(), 
+                loadNpcs() // allNpcs is assigned globally inside this function
+            ]);
+
+            // 2. Now that data is guaranteed to be loaded, populate the UI.
+            //    Check if the loaded data has the expected properties.
+            if (classRaceData && classRaceData.races && classRaceData.classes) {
+                populateDropdown(formFields.race, classRaceData.races.map(r => ({text: r, value: r})), 'Select Race');
+                populateDropdown(formFields.class, classRaceData.classes.map(c => ({text: c, value: c})), 'Select Class');
+            } else {
+                // If data is malformed, log an error but don't crash.
+                console.error("Class/Race data is missing 'races' or 'classes' properties:", classRaceData);
+            }
             
-            // Populate UI that does not depend on items
-            populateDropdown(formFields.race, classRaceData.races.map(r => ({text: r, value: r})), 'Select Race');
-            populateDropdown(formFields.class, classRaceData.classes.map(c => ({text: c, value: c})), 'Select Class');
             populateDropdown(formFields.affinity, AFFINITY_OPTIONS.map(a => ({text: a, value: a})), 'Select Affinity');
             renderNpcList();
             populateForm(null);
 
-            // UPDATED: Now wait for the items module to be fully ready.
+            // 3. Set up event listener for the "add new" button, passing the loaded data.
+            addNewNpcBtn.addEventListener('click', () => addNewNpc(classRaceData));
+
+            // The rest of the initialization is the same
             if (window.App.Items?.isReady) {
                 initializeItemDependentUI();
             } else {
@@ -295,7 +276,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             npcForm.addEventListener('input', handleFormChange);
-            addNewNpcBtn.addEventListener('click', addNewNpc);
             deleteNpcBtn.addEventListener('click', deleteSelectedNpc);
             inventoryAddBtn.addEventListener('click', addInventoryItem);
             
