@@ -7,10 +7,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- STATE MANAGEMENT ---
     let allItems = [];
-    let itemCategories = {};
     let allDescriptions = {};
     let selectedItemId = null;
     let localUnsavedChanges = false;
+    let itemCategories = {}; // Will be populated once and stored
 
     // --- DOM ELEMENTS ---
     const itemListContainer = document.getElementById('item-list');
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadCategories = async () => {
         const response = await fetch(API_URL_CATEGORIES);
         if (!response.ok) throw new Error('Failed to fetch item categories.');
-        itemCategories = await response.json();
+        return response.json();
     };
     const loadDescriptions = async () => {
         const response = await fetch(API_URL_DESCRIPTIONS);
@@ -45,17 +45,11 @@ document.addEventListener('DOMContentLoaded', () => {
         allDescriptions = await response.json();
     };
     const saveItems = async () => {
-        const response = await fetch(API_URL_ITEMS, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(allItems, null, 2)
-        });
+        const response = await fetch(API_URL_ITEMS, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(allItems, null, 2) });
         if (!response.ok) throw new Error('Failed to save items.');
     };
     const saveDescriptions = async () => {
-        const response = await fetch(API_URL_DESCRIPTIONS, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(allDescriptions, null, 2)
-        });
+        const response = await fetch(API_URL_DESCRIPTIONS, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(allDescriptions, null, 2) });
         if (!response.ok) throw new Error('Failed to save descriptions.');
     };
 
@@ -77,7 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
             itemListContainer.appendChild(itemElement);
         });
     };
-
     const renderItemOwners = (itemId) => {
         itemOwnersListContainer.innerHTML = '';
         if (!itemId || itemId.startsWith('temp_')) {
@@ -86,34 +79,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const allNpcs = window.App.Npcs?.getAllNpcs() ?? [];
         const allCreatures = window.App.Creatures?.getAllCreatures() ?? [];
-        
         let allOwners = [];
-
-        // Find NPC owners
         allNpcs.forEach(npc => {
             const inventoryEntry = npc.inventory?.find(invItem => invItem.id === itemId);
-            if (inventoryEntry) {
-                allOwners.push({ type: 'npc', owner: npc, quantity: inventoryEntry.quantity });
-            }
+            if (inventoryEntry) { allOwners.push({ type: 'npc', owner: npc, quantity: inventoryEntry.quantity }); }
         });
-
-        // Find Creature owners
         allCreatures.forEach(creature => {
             const inventoryEntry = creature.inventory?.find(invItem => invItem.id === itemId);
-            if (inventoryEntry) {
-                allOwners.push({ type: 'creature', owner: creature, quantity: inventoryEntry.quantity });
-            }
+            if (inventoryEntry) { allOwners.push({ type: 'creature', owner: creature, quantity: inventoryEntry.quantity }); }
         });
-
         if (allOwners.length === 0) {
             itemOwnersListContainer.innerHTML = '<p class="placeholder-text">No known owners.</p>';
             return;
         }
-
         allOwners.forEach(({ type, owner, quantity }) => {
             const ownerEl = document.createElement('div');
             ownerEl.className = 'owner-item';
-            // UPDATED: Add data-owner-type attribute
             ownerEl.innerHTML = `
                 <div class="owner-info">
                     <span class="owner-name">${owner.name}</span>
@@ -123,25 +104,20 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             itemOwnersListContainer.appendChild(ownerEl);
         });
-
         itemOwnersListContainer.querySelectorAll('.button-view').forEach(button => {
             button.addEventListener('click', (e) => {
                 const ownerId = e.target.dataset.ownerId;
                 const ownerType = e.target.dataset.ownerType;
-
-                // UPDATED: Call the correct module based on type
-                if (ownerType === 'npc') {
-                    window.App.Npcs?.selectNpcById(ownerId);
-                } else if (ownerType === 'creature') {
-                    window.App.Creatures?.selectCreatureById(ownerId);
-                }
+                if (ownerType === 'npc') { window.App.Npcs?.selectNpcById(ownerId); } 
+                else if (ownerType === 'creature') { window.App.Creatures?.selectCreatureById(ownerId); }
             });
         });
     };
-
     const populateCategoryDropdown = () => {
         formFields.category.innerHTML = '<option value="">-- Select Category --</option>';
-        for (const category in itemCategories) formFields.category.add(new Option(category, category));
+        for (const category in itemCategories) {
+            formFields.category.add(new Option(category, category));
+        }
     };
     const populateSubCategoryDropdown = (selectedCategory) => {
         const subCategorySelect = formFields.subCategory;
@@ -149,7 +125,9 @@ document.addEventListener('DOMContentLoaded', () => {
         subCategorySelect.disabled = true;
         if (selectedCategory && itemCategories[selectedCategory]) {
             subCategorySelect.disabled = false;
-            for (const subCategory in itemCategories[selectedCategory]) subCategorySelect.add(new Option(subCategory, subCategory));
+            for (const subCategory in itemCategories[selectedCategory]) {
+                subCategorySelect.add(new Option(subCategory, subCategory));
+            }
         }
     };
     const populateTypeDropdown = (selectedCategory, selectedSubCategory) => {
@@ -182,26 +160,19 @@ document.addEventListener('DOMContentLoaded', () => {
         formFields.value.value = item.stats.value;
         formFields.charge.value = item.stats.charge;
         formFields.affinity.value = item.stats.affinity;
-        const descriptions = allDescriptions[item.id] || {};
-        formFields.descCommon.value = descriptions.common || '';
-        formFields.descLearned.value = descriptions.learned || '';
-        formFields.descForgotten.value = descriptions.forgotten || '';
+        const descriptions = allDescriptions[item.id] || { common: '', learned: '', forgotten: '' };
+        formFields.descCommon.value = descriptions.common;
+        formFields.descLearned.value = descriptions.learned;
+        formFields.descForgotten.value = descriptions.forgotten;
     };
 
     // --- ACTIONS & EVENT HANDLERS ---
-    const setUnsaved = () => {
-        localUnsavedChanges = true;
-        window.App.DataManager.setUnsavedChanges(true);
-    };
+    const setUnsaved = () => { localUnsavedChanges = true; window.App.DataManager.setUnsavedChanges(true); };
     const generateUniqueId = (name, currentIdToIgnore = null) => {
         const baseId = 'item_' + name.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
         if (!allItems.some(item => item.id === baseId && item.id !== currentIdToIgnore)) return baseId;
         let counter = 1;
-        while (true) {
-            let newId = `${baseId}_${String(counter).padStart(2, '0')}`;
-            if (!allItems.some(item => item.id === newId && item.id !== currentIdToIgnore)) return newId;
-            counter++;
-        }
+        while (true) { let newId = `${baseId}_${String(counter).padStart(2, '0')}`; if (!allItems.some(item => item.id === newId && item.id !== currentIdToIgnore)) return newId; counter++; }
     };
     const selectItem = (id) => {
         selectedItemId = id;
@@ -231,10 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (newName.trim() !== '') {
                 newId = generateUniqueId(newName, oldId);
                 if (oldId !== newId) {
-                    if (allDescriptions[oldId]) {
-                        allDescriptions[newId] = { ...allDescriptions[oldId] };
-                        delete allDescriptions[oldId];
-                    }
+                    if (allDescriptions[oldId]) { allDescriptions[newId] = { ...allDescriptions[oldId] }; delete allDescriptions[oldId]; }
                     selectedItemId = newId;
                 }
             }
@@ -250,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 affinity: formFields.affinity.value,
             }
         };
-        if (!allDescriptions[newId]) allDescriptions[newId] = {};
+        if (!allDescriptions[newId]) allDescriptions[newId] = { common: '', learned: '', forgotten: '' };
         allDescriptions[newId].common = formFields.descCommon.value;
         allDescriptions[newId].learned = formFields.descLearned.value;
         allDescriptions[newId].forgotten = formFields.descForgotten.value;
@@ -274,49 +242,51 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INITIALIZATION ---
     const initializeEditor = async () => {
         try {
-            // Register the module object immediately, but without the ready flag.
             window.App.Items = {
-                save: async () => {
-                    if (allItems.some(item => item.id.startsWith('temp_'))) {
-                        throw new Error("Cannot save Items. Please provide a name for all new items first.");
-                    }
-                    await Promise.all([saveItems(), saveDescriptions()]);
-                    localUnsavedChanges = false;
-                },
+                save: async () => { if (allItems.some(item => item.id.startsWith('temp_'))) { throw new Error("Cannot save Items. Please provide a name for all new items first."); } await Promise.all([saveItems(), saveDescriptions()]); localUnsavedChanges = false; },
                 hasUnsavedChanges: () => localUnsavedChanges,
                 getAllItems: () => allItems,
-                isReady: false // UPDATED: Start as not ready
+                isReady: false
             };
 
-            await Promise.all([loadCategories(), loadItems(), loadDescriptions()]);
+            // 1. Fetch all data and store it.
+            const [loadedCategories, _, __] = await Promise.all([
+                loadCategories(),
+                loadItems(),
+                loadDescriptions()
+            ]);
 
-            // Now that data is loaded, populate the UI
+            // 2. Validate the critical category data before assigning it globally.
+            if (!loadedCategories || typeof loadedCategories !== 'object' || Object.keys(loadedCategories).length === 0) {
+                throw new Error(`Failed to load or parse item categories. Received: ${JSON.stringify(loadedCategories)}`);
+            }
+            itemCategories = loadedCategories; // Assign to the module-level variable
+
+            // 3. Now that data is validated, populate the UI.
             populateCategoryDropdown();
             populateAffinityDropdown();
             renderItemList();
             populateForm(null);
 
-            // UPDATED: Listen for changes from the NPC module
-            document.addEventListener('npcDataChanged', () => {
-                if (selectedItemId) {
-                    renderItemOwners(selectedItemId);
-                }
-            });
-
+            // 4. Set up event listeners.
+            document.addEventListener('npcDataChanged', () => { if (selectedItemId) { renderItemOwners(selectedItemId); } });
+            document.addEventListener('creatureDataChanged', () => { if (selectedItemId) { renderItemOwners(selectedItemId); } });
+            
             itemForm.addEventListener('input', handleFormChange);
             addNewItemBtn.addEventListener('click', addNewItem);
             deleteItemBtn.addEventListener('click', deleteSelectedItem);
+
             formFields.category.addEventListener('change', (e) => {
                 populateSubCategoryDropdown(e.target.value);
                 populateTypeDropdown(e.target.value, '');
-                handleFormChange();
+                handleFormChange(e);
             });
             formFields.subCategory.addEventListener('change', (e) => {
                  populateTypeDropdown(formFields.category.value, e.target.value);
-                 handleFormChange();
+                 handleFormChange(e);
             });
 
-            // UPDATED: Announce that this module is now fully loaded and ready.
+            // 5. Announce readiness.
             window.App.Items.isReady = true;
             document.dispatchEvent(new CustomEvent('itemsDataLoaded'));
             console.log("Items module initialized and data loaded.");
