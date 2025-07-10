@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- CONFIGURATION ---
-    const API_URL_ITEMS = 'http://localhost:8080/items';
-    const API_URL_CATEGORIES = 'http://localhost:8080/item-categories';
-    const API_URL_DESCRIPTIONS = 'http://localhost:8080/item-descriptions';
+    const API_URL_ITEMS = '/.netlify/functions/items';
+    const API_URL_CATEGORIES = '/.netlify/functions/items_categories';
+    const API_URL_DESCRIPTIONS = '/.netlify/functions/items_descriptions';
     const AFFINITY_OPTIONS = ["None", "Frost", "Fire", "Lightning", "Water", "Divine", "Chaos"];
 
     // --- STATE MANAGEMENT ---
