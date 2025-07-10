@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- CONFIGURATION ---
-    const API_URL_DIALOGUE = 'http://localhost:8080/dialogue';
-    const API_URL_CLASS_RACE = 'http://localhost:8080/class-race-data';
+    const API_URL_DIALOGUE = '/.netlify/functions/dialogue';
+    const API_URL_CLASS_RACE = '/.netlify/functions/class_race';
 
     // --- STATE ---
     let allDialogue = {};
