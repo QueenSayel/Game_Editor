@@ -1,0 +1,87 @@
+Conditions:
+has.read(nodeID) .e.g. has.read(3fb21356)
+has.item(itemID) .e.g. has.item(paper_armour)
+has.item(itemID=itemQuantity) .e.g. has.item(dragon_skull=50)
+has.item(itemID>itemQuantity) .e.g. has.item(dragon_skull>1)
+has.item(itemID<itemQuantity) .e.g. has.item(claymore<2)
+not.has.item(itemID) .e.g. not.has.item(paper_armour)
+not.has.item(itemID=itemQuantity) .e.g. not.has.item(dragon_skull=1)
+not.has.item(itemID>itemQuantity) .e.g. not.has.item(dragon_skull>1)
+not.has.item(itemID<itemQuantity) .e.g. not.has.item(dragon_skull<1)
+is.class(playerClass) .e.g. is.class(knight)
+not.is.class(playerClass) .e.g. not.is.class(mage)
+is.weather(weatherType) .e.g. is.weather(Sunny)
+not.is.weather(weatherType) .e.g. not.is.weather(Sunny)
+is.time=hour .e.g. is.time=8
+is.time<hour .e.g. is.time<10
+is.time>hour .e.g. is.time>6
+not.is.time=hour .e.g. not.is.time=8
+not.is.time<hour .e.g. not.is.time<10
+not.is.time>hour .e.g. not.is.time>6
+is.date=date .e.g. is.date=2023-07-12
+is.date<date .e.g. is.date<2023-07-12
+is.date>date .e.g. is.date>2023-07-12
+not.is.date=date .e.g. not.is.date=2023-07-12
+not.is.date<date .e.g. not.is.date<2023-07-12
+not.is.date>date .e.g. not.is.date>2023-07-12
+is.race(race) .e.g. is.race(orc)
+not.is.race(race) .e.g. not.is.race(orc)
+has.flag(flag) .e.g. has.flag(test_flag)
+not.has.flag(flag) .e.g. not.has.flag(test_flag)
+has.skill(skillName) .e.g. has.skill(botany)
+has.skill(skillName=skillLevel) .e.g. has.skill(botany=50)
+has.skill(skillName>skillLevel) .e.g. has.skill(botany>50)
+has.skill(skillName<skillLevel) .e.g. has.skill(botany<50)
+not.has.skill(skillName) .e.g. not.has.skill(botany)
+not.has.skill(skillName=skillLevel) .e.g. not.has.skill(botany=50)
+not.has.skill(skillName>skillLevel) .e.g. not.has.skill(botany>50)
+not.has.skill(skillName<skillLevel) .e.g. not.has.skill(botany<50)
+is.gender(gender) .e.g. is.gender(male)
+has.spell(spellId) .e.g. has.spell(fireball)
+has.spell(spellId=spellLevel) .e.g. has.spell(fireball=2)
+has.spell(spellId>spellLevel) .e.g. has.spell(fireball>2)
+has.spell(spellId<spellLevel) .e.g. has.spell(fireball<2)
+not.has.spell(spellId) .e.g. not.has.spell(fireball)
+not.has.spell(spellId=spellLevel) .e.g. not.has.spell(fireball=2)
+not.has.spell(spellId>spellLevel) .e.g. not.has.spell(fireball>2)
+not.has.spell(spellId<spellLevel) .e.g. not.has.spell(fireball<2)
+has.killed(npcId) .e.g. has.killed(dragon)
+has.killed(npcId=killCount) .e.g. has.killed(dragon=2)
+has.killed(npcId>killCount) .e.g. has.killed(dragon>2)
+has.killed(npcId<killCount) .e.g. has.killed(dragon<2)
+not.has.killed(npcId) .e.g. not.has.killed(dragon)
+not.has.killed(npcId=killCount) .e.g. not.has.killed(dragon=2)
+not.has.killed(npcId>killCount) .e.g. not.has.killed(dragon>2)
+not.has.killed(npcId<killCount) .e.g. not.has.killed(dragon<2)
+has.reputation(repId) .e.g. has.reputation(dragonkin)
+has.reputation(repId=repLevel) .e.g. has.reputation(dragonkin=2000)
+has.reputation(repId>repLevel) .e.g. has.reputation(dragonkin>2000)
+has.reputation(repId<repLevel) .e.g. has.reputation(dragonkin<2000)
+not.has.reputation(repId) .e.g. not.has.reputation(dragonkin)
+not.has.reputation(repId=repLevel) .e.g. not.has.reputation(dragonkin=2000)
+not.has.reputation(repId>repLevel) .e.g. not.has.reputation(dragonkin>2000)
+not.has.reputation(repId<repLevel) .e.g. not.has.reputation(dragonkin<2000)
+
+Variables:
+single .e.g. single
+greet .e.g. greet
+npc .e.g. npc
+topic .e.g. topic
+
+Commands:
+set.flag(flag) .e.g. set.flag(bg325t)
+mod.reputation(repId+repChange) .e.g. mod.reputation(dragonkin+200)
+mod.reputation(repId-repChange) .e.g. mod.reputation(dragonkin-1000)
+mod.item(itemId+itemChange) .e.g. mod.item(dragon_skull+50)
+mod.item(itemId-itemChange) .e.g. mod.item(dildo-5)
+mod.skill(skillId+skillChange) .e.g. mod.skill(botany+50)
+mod.skill(skillId-skillChange) .e.g. mod.skill(sailing-5)
+
+Modifiers:
+Fade
+.e.g. "Fade": "5"
+.e.g. "Fade": "5#b3681e"
+.e.g. "Fade": "1.5.1"
+.e.g. "Fade": "1.5.1#b3681e"
+Color
+.e.g. "Color": "#b86ce0"
