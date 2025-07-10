@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- CONFIGURATION ---
-    const API_URL_NPCS = 'http://localhost:8080/npcs';
-    const API_URL_CLASS_RACE = 'http://localhost:8080/class-race-data';
+    const API_URL_NPCS = '/.netlify/functions/npcs';
+    const API_URL_CLASS_RACE = '/.netlify/functions/class_race';
     const AFFINITY_OPTIONS = ["None", "Frost", "Fire", "Lightning", "Water", "Divine", "Chaos"];
 
     // --- STATE MANAGEMENT ---
