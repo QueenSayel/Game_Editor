@@ -486,6 +486,11 @@ div.awesomplete > ul mark {
     border-radius: 2px;
 }
 
+.logic-input-wrapper {
+    width: 100%;       /* Force the wrapper to take up the full width of its container */
+    margin-bottom: 5px;/* Add a little space between the input and the list below */
+}
+
 .logic-editor {
     display: flex;
     gap: 10px;
