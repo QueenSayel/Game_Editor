@@ -479,11 +479,6 @@ button:hover { opacity: 0.8; border-color: #666; }
     color: white;
 }
 
-div.awesomplete > ul {
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-}
-
 div.awesomplete > ul mark {
     background: hsl(208, 100%, 75%);
     color: black;
