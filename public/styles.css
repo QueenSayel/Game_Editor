@@ -504,15 +504,9 @@ div.awesomplete > ul mark {
     width: 100%;
 }
 
-#add-logic-btn {
-    flex: none; /* Prevent button from growing */
-    padding: 10px; /* Consistent padding */
-}
-
 .logic-editor #logic-input {
     flex-grow: 1;
     flex-shrink: 1;
-    width: auto;
 }
 
 .logic-list-container {
