@@ -479,12 +479,34 @@ button:hover { opacity: 0.8; border-color: #666; }
     color: white;
 }
 
-div.awesomplete > ul mark {
-    background: hsl(208, 100%, 100%);
-    color: black;
-    padding: 1px 2px;
-    border-radius: 2px;
-    color: var(--text-color);
+/* 1. Make the dropdown suggestions fully opaque and match the theme */
+div.awesomplete > ul {
+    background: var(--surface-color); /* Use our dark surface color for the background */
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5); /* A more prominent shadow for dark themes */
+    margin-top: 5px; /* Add a little space between the input field and the list */
+    opacity: 1 !important; /* Force full opacity, overriding the default */
+    color: var(--text-color); /* Set the default text color for all items */
+}
+
+/* 2. Style the highlighted/selected suggestion */
+div.awesomplete > ul > li[aria-selected="true"] {
+    background: var(--primary-color); /* Use our theme's primary color for the highlight */
+    color: white; /* Make the text white on the highlight for contrast */
+}
+
+/* Style the text that the user has typed (the part that gets bolded) */
+div.awesomplete > ul > li mark {
+    background: transparent; /* Remove the default light-blue background */
+    color: var(--text-color); /* Make the base text color our theme's text color */
+    font-weight: bold; /* Keep it bold to show what part matched */
+    padding: 0; /* Remove default padding */
+}
+
+/* On the highlighted suggestion, make the matched text stand out more */
+div.awesomplete > ul > li[aria-selected="true"] mark {
+    color: white; /* Ensure the bolded text is also white on the primary background */
 }
 
 .logic-editor {
