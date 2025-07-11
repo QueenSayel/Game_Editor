@@ -504,6 +504,7 @@ div.awesomplete > ul mark {
 .awesomplete mark {
   background: none !important;
   font-weight: bold !important;
+  color: white !important;
 }
 
 .awesomplete > ul:before {
