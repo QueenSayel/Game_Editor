@@ -122,10 +122,12 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="form-group">
                 <label>Logic</label>
-                <div class="logic-editor">
-                    <input type="text" id="logic-input" class="awesomplete" placeholder="e.g., has.item(sword)">
-                    <button id="add-logic-btn" class="button-primary">+</button>
-                </div>
+		<div class="logic-input-wrapper">
+	                <div class="logic-editor">
+	                    <input type="text" id="logic-input" class="awesomplete" placeholder="e.g., has.item(sword)">
+	                    <button id="add-logic-btn" class="button-primary">+</button>
+	                </div>
+		 </div>
                 <div id="logic-list-container" class="logic-list-container">
                     ${logicItemsHtml}
                 </div>
