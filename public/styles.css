@@ -484,6 +484,13 @@ div.awesomplete > ul mark {
     color: black;
     padding: 1px 2px;
     border-radius: 2px;
+    opacity: 1 !important;
+}
+
+.awesomplete .awesomplete-item,
+.awesomplete ul > li {
+  color: black !important;
+  font-weight: normal !important; /* if you prefer only the matched part bold, not whole line */
 }
 
 .awesomplete mark {
