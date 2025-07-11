@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <label>Logic</label>
                 <div class="logic-editor">
                     <input type="text" id="logic-input" class="awesomplete" placeholder="e.g., has.item(sword)">
-                    <button id="add-logic-btn" class="button-primary">+ Add</button>
+                    <button id="add-logic-btn" class="button-primary">+</button>
                 </div>
                 <div id="logic-list-container" class="logic-list-container">
                     ${logicItemsHtml}
