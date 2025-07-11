@@ -479,6 +479,14 @@ button:hover { opacity: 0.8; border-color: #666; }
     color: white;
 }
 
+div.awesomplete > ul {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    opacity: 1 !important;
+    border-radius: 4px;
+}
+
 div.awesomplete > ul mark {
     background: hsl(208, 100%, 75%);
     color: black;
@@ -489,13 +497,17 @@ div.awesomplete > ul mark {
 
 .awesomplete .awesomplete-item,
 .awesomplete ul > li {
-  color: black !important;
+  color: white !important;
   font-weight: normal !important; /* if you prefer only the matched part bold, not whole line */
 }
 
 .awesomplete mark {
   background: none !important;
   font-weight: bold !important;
+}
+
+.awesomplete > ul:before {
+  content: none !important;
 }
 
 .logic-editor {
