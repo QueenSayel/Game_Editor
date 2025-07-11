@@ -8,7 +8,6 @@
     --success-color: #4CAF50;
     --danger-color: #F44336;
     --font-family: 'Roboto', sans-serif;
-    /* --- NEW: Theme colors for nodes --- */
     --npc-node-color: #004a7c;
     --player-node-color: #007c4a;
 }
@@ -491,10 +490,12 @@ div.awesomplete > ul mark {
     display: flex;
     gap: 10px;
     align-items: center;
+    width: 100%;
 }
 
 .logic-editor #logic-input {
     flex-grow: 1;
+    flex-shrink: 1;
     width: auto;
 }
 
