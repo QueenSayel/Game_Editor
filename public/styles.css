@@ -486,6 +486,11 @@ div.awesomplete > ul mark {
     border-radius: 2px;
 }
 
+.awesomplete mark {
+  background: none;
+  font-weight: bold;
+}
+
 .logic-editor {
     display: flex;
     gap: 10px;
