@@ -490,8 +490,8 @@ div.awesomplete > ul {
 }
 
 div.awesomplete > ul > li[aria-selected="true"] {
-    background: var(--primary-color); /* Use our theme's blue for the highlight */
-    color: var(--text-color);         /* Make the text on the highlight the main white/light-grey */
+    background: var(--primary-color);
+    color: var(--text-color);
 }
 
 div.awesomplete > ul > li mark {
@@ -499,6 +499,11 @@ div.awesomplete > ul > li mark {
     color: inherit;          /* Inherit color from the parent (li) */
     font-weight: bold;       /* JUST make it bold */
     padding: 0;
+    color: var(--text-color); 
+}
+
+div.awesomplete > ul > li[aria-selected="true"] mark {
+    color: white;
 }
 
 .logic-editor {
