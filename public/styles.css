@@ -487,8 +487,8 @@ div.awesomplete > ul mark {
 }
 
 .awesomplete mark {
-  background: none;
-  font-weight: bold;
+  background: none !important;
+  font-weight: bold !important;
 }
 
 .logic-editor {
