@@ -1,7 +1,7 @@
 import { Redis } from '@upstash/redis';
 
 const redis = Redis.fromEnv();
-const minimapDataKey = 'system_minimap_image_v2';
+const minimapDataKey = 'system_minimap_image_v3';
 
 export default async (request, context) => {
   const headers = { 
