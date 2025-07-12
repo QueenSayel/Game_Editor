@@ -568,7 +568,7 @@ div.awesomplete > ul mark {
 #map-status-panel {
     margin-top: 10px; padding: 5px; border-radius: 3px; background-color: #333;
 }
-#map-db-status { font-weight: bold; transition: color 0.3s; }
+#map-status { font-weight: bold; transition: color 0.3s; }
 #map-container { 
     height: 100%;
     width: 100%;
