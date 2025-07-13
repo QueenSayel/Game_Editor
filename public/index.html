@@ -218,7 +218,18 @@
 	                        Status: <span id="map-status">Idle</span>
 	                    </div>
 	                </div>
-	                <div id="map-palette"></div>
+			<div id="map-palette" class="palette-container">
+			    <div class="palette-header">
+			        <span class="palette-title">Recent Tiles</span>
+			        <button id="palette-toggle-btn">Show Full Palette</button>
+			    </div>
+			    <div id="palette-recent" class="palette-grid"></div>
+			    <div id="palette-full-container">
+			        <div id="palette-full">
+			            <!-- Full palette will be generated here by JS -->
+			        </div>
+			    </div>
+			</div>
 	                <div id="map-container"></div>
 	                <div id="minimap-container">
 	                    <div id="minimap-label">World Overview</div>
