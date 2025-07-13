@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const MINIMAP_HEIGHT_CHUNKS = Math.ceil(WORLD_HEIGHT_IN_TILES / CHUNK_SIZE);
     const MINIMAP_DISPLAY_SIZE = 250;
 
-    // IMPORTANT: Make sure this is the same version as your generator tool
+    // FIX: Use the complete, expanded tile legend
     const tileLegend = {
         0: { name: 'Ocean', color: '#1A237E' }, 1: { name: 'Deep Water', color: '#1565C0' }, 2: { name: 'Coastal Water', color: '#03A9F4' }, 3: { name: 'Shallow Water', color: '#4FC3F7' }, 4: { name: 'Coral Reef', color: '#E040FB' }, 5: { name: 'Icy Water', color: '#B2EBF2' }, 6: { name: 'Murky Swamp Water', color: '#00695C' },
         20: { name: 'Beach Sand', color: '#FFF59D' }, 21: { name: 'Desert Sand', color: '#FFCA28' }, 22: { name: 'Dirt', color: '#8D6E63' }, 23: { name: 'Mud', color: '#5D4037' }, 24: { name: 'Clay', color: '#BCAAA4' }, 25: { name: 'Gravel', color: '#A1887F' },
@@ -30,13 +30,23 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const colorToTileIdMap = new Map();
     for (const id in tileLegend) { colorToTileIdMap.set(tileLegend[id].color, parseInt(id)); }
-    let currentColor = tileLegend[40].color;
+    let currentColor = tileLegend[40].color; // Default to Lush Grass
 
     // --- 2. HELPERS & STATE ---
+    // FIX: The complete and correct LRUCache class
     class LRUCache {
         constructor(maxSize) { this.maxSize = maxSize; this.cache = new Map(); }
-        get(key) { if (!this.cache.has(key)) return undefined; const item = this.cache.get(key); this.cache.delete(key); this.cache.set(key, item); return item; }
-        set(key, value) { if (this.cache.has(key)) this.cache.delete(key); else if (this.cache.size >= this.maxSize) { this.cache.delete(this.cache.keys().next().value); } this.cache.set(key, value); }
+        get(key) {
+            if (!this.cache.has(key)) return undefined;
+            const item = this.cache.get(key); this.cache.delete(key); this.cache.set(key, item); return item;
+        }
+        set(key, value) {
+            if (this.cache.has(key)) this.cache.delete(key);
+            else if (this.cache.size >= this.maxSize) { this.cache.delete(this.cache.keys().next().value); }
+            this.cache.set(key, value);
+        }
+        remove(key) { this.cache.delete(key); }
+        has(key) { return this.cache.has(key); }
     }
     const chunkCache = new LRUCache(CACHE_SIZE);
     const chunkImageCache = new LRUCache(IMAGE_CACHE_SIZE);
@@ -86,8 +96,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function generateChunk() {
         const chunk = [];
+        // FIX: Default to Deep Water (ID 1) to match generator
         for (let y = 0; y < CHUNK_SIZE; y++) {
-            chunk.push(new Array(CHUNK_SIZE).fill(1)); // Default to Deep Water (ID 1)
+            chunk.push(new Array(CHUNK_SIZE).fill(1)); 
         }
         return chunk;
     }
@@ -127,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let y = 0; y < CHUNK_SIZE; y++) {
             for (let x = 0; x < CHUNK_SIZE; x++) {
                 const tileId = chunkData[y][x];
+                // FIX: Add fallback to prevent crash on invalid tile ID
                 const color = tileLegend[tileId]?.color || tileLegend[0].color;
                 context.fillStyle = color;
                 context.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
@@ -212,9 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
             drawVisibleWorld();
         });
 
-        // ===================================================
-        // OPTIMISTIC UI: The updated click handler
-        // ===================================================
+        // FIX: The complete Optimistic UI click handler
         stage.on('click tap', async (e) => {
             if (stage.isDragging() || isRendering) return;
             const transform = stage.getAbsoluteTransform().copy().invert();
@@ -224,17 +234,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const cx = Math.floor(tx / CHUNK_SIZE), cy = Math.floor(ty / CHUNK_SIZE);
             const chunkKey = `${cx},${cy}`;
-            const chunkData = await getChunkData(chunkKey); // Still need to get current data
+            const chunkData = await getChunkData(chunkKey);
             const newTileId = colorToTileIdMap.get(currentColor);
 
             if (chunkData[ty % CHUNK_SIZE][tx % CHUNK_SIZE] !== newTileId) {
-                // --- STEP 1: Perform all local changes instantly ---
                 setMapStatus('Painting...', '#f1c40f');
                 chunkData[ty % CHUNK_SIZE][tx % CHUNK_SIZE] = newTileId;
                 chunkCache.set(chunkKey, chunkData);
                 chunkImageCache.remove(chunkKey);
 
-                // Re-render the chunk visually right away
                 const oldImage = mapLayer.findOne(`[chunkKey="${chunkKey}"]`);
                 const CHUNK_PIXEL_SIZE = CHUNK_SIZE * PIXEL_SIZE;
                 const chunkMeta = oldImage 
@@ -242,20 +250,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     : { key: chunkKey, x: cx * CHUNK_PIXEL_SIZE, y: cy * CHUNK_PIXEL_SIZE };
                 if (oldImage) oldImage.destroy();
                 
-                // We must await the render, but it's local and fast
                 const newImage = await renderChunkToImage(chunkMeta);
                 if (newImage) {
                     chunkImageCache.set(chunkKey, newImage);
                     mapLayer.add(newImage);
                 }
                 
-                // Update the minimap visually right away
                 updateMinimapChunk_VisualOnly(cx, cy, chunkData);
                 mapLayer.batchDraw();
                 setMapStatus('Idle', '#2ecc71');
 
-                // --- STEP 2: Send all server saves in the background ---
-                // We don't `await` these. We fire them off and forget.
                 saveChunkData(chunkKey, chunkData)
                     .then(() => console.log(`Chunk ${chunkKey} saved.`))
                     .catch(err => console.error(`Failed to save chunk ${chunkKey}:`, err));
@@ -278,6 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const cx = Math.floor(tx / CHUNK_SIZE), cy = Math.floor(ty / CHUNK_SIZE);
             const chunkData = await getChunkData(`${cx},${cy}`);
             const tileId = chunkData[ty % CHUNK_SIZE][tx % CHUNK_SIZE];
+            // FIX: Add fallback for safety
             const tileInfo = tileLegend[tileId] || {name: 'Unknown Tile'};
             tooltip.style.display = 'block';
             tooltip.innerHTML = `Tile: <strong>${tileInfo.name}</strong><br>Coords: X: ${tx}, Y: ${ty}`;
@@ -375,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
         minimapLayer.batchDraw();
     }
     
-    // --- OPTIMISTIC UI: Split minimap update into two parts ---
+    // FIX: Split minimap update into two parts for optimistic UI
     function updateMinimapChunk_VisualOnly(cx, cy, chunkData) {
         if (!minimapImage) return;
         const canvas = minimapImage.image();
@@ -397,6 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function hexToRgb(hex) { const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex); return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : {r:0,g:0,b:0}; }
     function rgbToHex(r, g, b) { return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).padStart(6, '0'); }
+    // FIX: Switched to rgb string output for canvas compatibility
     function calculateChunkAverageColor(chunkData) {
         let totalR = 0, totalG = 0, totalB = 0;
         const numTiles = CHUNK_SIZE * CHUNK_SIZE;
