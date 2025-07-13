@@ -626,7 +626,6 @@ div.awesomplete > ul mark {
 }
 
 #palette-full-container {
-    display: none;
     overflow-y: auto;
     flex-grow: 1;
 }
