@@ -1,3 +1,4 @@
+// --- START OF MODIFIED FILE: map.js ---
 document.addEventListener('DOMContentLoaded', () => {
     let isMapInitialized = false;
     const mapTabButton = document.querySelector('button[data-tab="map"]');
@@ -58,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const initializeMap = async () => {
         if (isMapInitialized) return;
         isMapInitialized = true;
-        console.log("Initializing Map Module with Server-Side Storage...");
+        console.log("Initializing Map Module with Optimistic UI...");
 
         const container = document.getElementById('map-container');
         tooltip = document.getElementById('map-tooltip');
@@ -95,8 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
             chunkCache.set(coordKey, data);
             return data;
         }
-
-        // If no data from server, generate default and return (don't save yet)
         data = generateChunk();
         chunkCache.set(coordKey, data);
         return data;
@@ -123,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return new Promise((resolve) => Konva.Image.fromURL(url, resolve));
     }
 
-    // --- 5. RENDERER (Largely unchanged) ---
+    // --- 5. RENDERER ---
     async function drawVisibleWorld() {
         if (isRendering || !stage) return;
         isRendering = true;
@@ -202,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
         gridLayer.batchDraw();
     }
 
-    // --- 6. HELPERS (Unchanged) ---
+    // --- 6. HELPERS ---
     function getVisibleRect() {
         const scale = stage.scaleX();
         const pos = stage.position();
@@ -227,7 +226,88 @@ document.addEventListener('DOMContentLoaded', () => {
         return { data: coords, size: CHUNK_PIXEL_SIZE };
     }
     
-    // --- 7. EVENT HANDLING & UI (Updated save logic) ---
+    // --- 7. EVENT HANDLING & UI (OPTIMISTIC UPDATE LOGIC) ---
+    async function handleMapClick(e) {
+        if (stage.isDragging() || isRendering) return;
+
+        // --- PREPARATION ---
+        const transform = stage.getAbsoluteTransform().copy().invert();
+        const pos = transform.point(stage.getPointerPosition());
+        const tx = Math.floor(pos.x / PIXEL_SIZE), ty = Math.floor(pos.y / PIXEL_SIZE);
+
+        if (tx < 0 || tx >= WORLD_WIDTH_IN_TILES || ty < 0 || ty >= WORLD_HEIGHT_IN_TILES) return;
+        
+        const cx = Math.floor(tx / CHUNK_SIZE), cy = Math.floor(ty / CHUNK_SIZE);
+        const localTX = tx % CHUNK_SIZE, localTY = ty % CHUNK_SIZE;
+        const chunkKey = `${cx},${cy}`;
+
+        const chunkData = await getChunkData(chunkKey);
+        const originalTileId = chunkData[localTY][localTX];
+        const newTileId = colorToTileIdMap.get(currentColor);
+
+        if (originalTileId === newTileId) return; // No change needed
+
+        // --- 1. OPTIMISTIC UI UPDATE ---
+        // Update the local data and UI immediately, assuming success.
+        chunkData[localTY][localTX] = newTileId;
+        chunkCache.set(chunkKey, chunkData); // Update data cache
+        chunkImageCache.remove(chunkKey); // Invalidate the old rendered image
+
+        // This self-invoking async function redraws the chunk and minimap pixel instantly.
+        // We don't `await` it so the rest of the function (server sync) can proceed.
+        (async () => {
+            const oldImage = mapLayer.findOne(`[chunkKey="${chunkKey}"]`);
+            const chunkMeta = { key: chunkKey, x: cx * CHUNK_SIZE * PIXEL_SIZE, y: cy * CHUNK_SIZE * PIXEL_SIZE };
+            if (oldImage) oldImage.destroy();
+            
+            const newImage = await renderChunkToImage(chunkMeta);
+            if (newImage) {
+                chunkImageCache.set(chunkKey, newImage);
+                mapLayer.add(newImage);
+                mapLayer.batchDraw();
+            }
+            // Update the minimap pixel visually without saving the whole minimap to the server yet
+            updateLocalMinimapPixel(cx, cy, chunkData);
+        })();
+
+        setMapStatus('Syncing...', '#f39c12');
+
+        // --- 2. BACKGROUND SERVER SYNC ---
+        // Now, try to save the changes to the server in the background.
+        try {
+            await saveChunkData(chunkKey, chunkData);
+            await saveMinimapToServer(); // Save the updated minimap state
+            setMapStatus('Idle', '#2ecc71');
+        } catch (error) {
+            // --- 3. PESSIMISTIC REVERT ON FAILURE ---
+            // If the save fails, revert the changes and notify the user.
+            console.error("Optimistic save failed. Reverting UI.", error);
+            setMapStatus('Save Failed!', '#e74c3c');
+            alert(`Failed to save map change for chunk ${chunkKey}. Reverting change.`);
+
+            // Revert the data in memory
+            chunkData[localTY][localTX] = originalTileId;
+            chunkCache.set(chunkKey, chunkData);
+            chunkImageCache.remove(chunkKey);
+
+            // Redraw the chunk and minimap with the original data
+            (async () => {
+                const oldImage = mapLayer.findOne(`[chunkKey="${chunkKey}"]`);
+                const chunkMeta = { key: chunkKey, x: cx * CHUNK_SIZE * PIXEL_SIZE, y: cy * CHUNK_SIZE * PIXEL_SIZE };
+                if (oldImage) oldImage.destroy();
+                
+                const revertedImage = await renderChunkToImage(chunkMeta); // Renders with original data
+                if (revertedImage) {
+                    chunkImageCache.set(chunkKey, revertedImage);
+                    mapLayer.add(revertedImage);
+                    mapLayer.batchDraw();
+                }
+                updateLocalMinimapPixel(cx, cy, chunkData);
+            })();
+        }
+    }
+
+
     function setupEventListeners() {
         stage.on('dragstart', () => tooltip.style.display = 'none');
         stage.on('dragend', drawVisibleWorld);
@@ -246,48 +326,8 @@ document.addEventListener('DOMContentLoaded', () => {
             drawVisibleWorld();
         });
 
-        stage.on('click tap', async (e) => {
-            if (stage.isDragging() || isRendering) return;
-            const transform = stage.getAbsoluteTransform().copy().invert();
-            const pos = transform.point(stage.getPointerPosition());
-            const tx = Math.floor(pos.x / PIXEL_SIZE), ty = Math.floor(pos.y / PIXEL_SIZE);
-            if (tx < 0 || tx >= WORLD_WIDTH_IN_TILES || ty < 0 || ty >= WORLD_HEIGHT_IN_TILES) return;
-            
-            setMapStatus('Saving...', '#f39c12');
-            const cx = Math.floor(tx / CHUNK_SIZE), cy = Math.floor(ty / CHUNK_SIZE);
-            const chunkKey = `${cx},${cy}`;
-            const chunkData = await getChunkData(chunkKey);
-            const newTileId = colorToTileIdMap.get(currentColor);
-
-            if (chunkData[ty % CHUNK_SIZE][tx % CHUNK_SIZE] !== newTileId) {
-                chunkData[ty % CHUNK_SIZE][tx % CHUNK_SIZE] = newTileId;
-                
-                // Save to server
-                await saveChunkData(chunkKey, chunkData);
-
-                // Update caches
-                chunkCache.set(chunkKey, chunkData);
-                chunkImageCache.remove(chunkKey);
-
-                // Re-render chunk
-                const oldImage = mapLayer.findOne(`[chunkKey="${chunkKey}"]`);
-                const CHUNK_PIXEL_SIZE = CHUNK_SIZE * PIXEL_SIZE;
-                const chunkMeta = oldImage 
-                    ? { key: chunkKey, x: oldImage.x(), y: oldImage.y() }
-                    : { key: chunkKey, x: cx * CHUNK_PIXEL_SIZE, y: cy * CHUNK_PIXEL_SIZE };
-                if (oldImage) oldImage.destroy();
-                
-                const newImage = await renderChunkToImage(chunkMeta);
-                if (newImage) {
-                    chunkImageCache.set(chunkKey, newImage);
-                    mapLayer.add(newImage);
-                }
-                
-                await updateMinimapChunk(cx, cy, chunkData);
-                mapLayer.batchDraw();
-            }
-            setMapStatus('Idle', '#2ecc71');
-        });
+        // Use the new optimistic handler
+        stage.on('click tap', handleMapClick);
 
         stage.on('mousemove', async (e) => {
             if (!e.evt.altKey) { tooltip.style.display = 'none'; lastTooltipCoord = ''; return; }
@@ -342,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
         paletteContainer.querySelector(`[data-color="${currentColor}"]`).classList.add('selected');
     }
 
-    // --- 8. MINIMAP LOGIC (Updated save logic) ---
+    // --- 8. MINIMAP LOGIC (Split local update from server save) ---
     async function setupMinimap() {
         minimapStage = new Konva.Stage({ container: 'minimap', width: MINIMAP_DISPLAY_SIZE, height: MINIMAP_DISPLAY_SIZE });
         minimapLayer = new Konva.Layer();
@@ -408,18 +448,28 @@ document.addEventListener('DOMContentLoaded', () => {
         minimapLayer.batchDraw();
     }
     
-    async function updateMinimapChunk(cx, cy, chunkData) {
+    /**
+     * NEW: Updates the minimap pixel on the local canvas instantly. Does NOT save to server.
+     */
+    function updateLocalMinimapPixel(cx, cy, chunkData) {
         if (!minimapImage) return;
         const canvas = minimapImage.image();
         const context = canvas.getContext('2d');
         context.fillStyle = calculateChunkAverageColor(chunkData);
         context.fillRect(cx, cy, 1, 1);
-        const dataURL = canvas.toDataURL();
-        await fetch(API_URL_MINIMAP, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: dataURL });
-        minimapLayer.batchDraw();
+        minimapLayer.batchDraw(); // Redraw the layer to show the change
     }
 
-    // --- Color Helpers (Unchanged) ---
+    /**
+     * NEW: Saves the entire current state of the minimap canvas to the server.
+     */
+    async function saveMinimapToServer() {
+        if (!minimapImage) return;
+        const dataURL = minimapImage.image().toDataURL();
+        await fetch(API_URL_MINIMAP, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: dataURL });
+    }
+
+    // --- Color Helpers ---
     function hexToRgb(hex) { const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex); return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null; }
     function rgbToHex(r, g, b) { return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).padStart(6, '0'); }
     function calculateChunkAverageColor(chunkData) {
@@ -431,3 +481,4 @@ document.addEventListener('DOMContentLoaded', () => {
     
     mapTabButton.addEventListener('click', initializeMap, { once: true });
 });
+// --- END OF MODIFIED FILE: map.js ---
