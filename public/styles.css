@@ -619,7 +619,3 @@ div.awesomplete > ul mark {
     border: 1px solid #444;
     cursor: crosshair;
 }
-
-#map.tab-content {
-    position: relative;
-}
