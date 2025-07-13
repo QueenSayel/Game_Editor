@@ -630,6 +630,10 @@ div.awesomplete > ul mark {
     flex-grow: 1;
 }
 
+#map-palette.palette-container.expanded #palette-full-container {
+    overflow-y: auto;
+}
+
 .palette-group {
     margin-bottom: 15px;
 }
