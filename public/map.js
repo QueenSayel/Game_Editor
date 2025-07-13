@@ -1,4 +1,4 @@
-// --- START OF MODIFIED FILE: map.js ---
+// --- START OF CORRECTED FILE: map.js ---
 document.addEventListener('DOMContentLoaded', () => {
     let isMapInitialized = false;
     const mapTabButton = document.querySelector('button[data-tab="map"]');
@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastTooltipCoord = '';
 
     let minimapStage, minimapLayer, minimapViewportRect, minimapImage;
+    let minimapCanvas; // *** FIX: A dedicated canvas for minimap data
 
     const initializeMap = async () => {
         if (isMapInitialized) return;
@@ -248,13 +249,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (originalTileId === newTileId) return; // No change needed
 
         // --- 1. OPTIMISTIC UI UPDATE ---
-        // Update the local data and UI immediately, assuming success.
         chunkData[localTY][localTX] = newTileId;
-        chunkCache.set(chunkKey, chunkData); // Update data cache
-        chunkImageCache.remove(chunkKey); // Invalidate the old rendered image
+        chunkCache.set(chunkKey, chunkData); 
+        chunkImageCache.remove(chunkKey);
 
-        // This self-invoking async function redraws the chunk and minimap pixel instantly.
-        // We don't `await` it so the rest of the function (server sync) can proceed.
         (async () => {
             const oldImage = mapLayer.findOne(`[chunkKey="${chunkKey}"]`);
             const chunkMeta = { key: chunkKey, x: cx * CHUNK_SIZE * PIXEL_SIZE, y: cy * CHUNK_SIZE * PIXEL_SIZE };
@@ -266,37 +264,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 mapLayer.add(newImage);
                 mapLayer.batchDraw();
             }
-            // Update the minimap pixel visually without saving the whole minimap to the server yet
             updateLocalMinimapPixel(cx, cy, chunkData);
         })();
 
         setMapStatus('Syncing...', '#f39c12');
 
         // --- 2. BACKGROUND SERVER SYNC ---
-        // Now, try to save the changes to the server in the background.
         try {
             await saveChunkData(chunkKey, chunkData);
-            await saveMinimapToServer(); // Save the updated minimap state
+            await saveMinimapToServer();
             setMapStatus('Idle', '#2ecc71');
         } catch (error) {
             // --- 3. PESSIMISTIC REVERT ON FAILURE ---
-            // If the save fails, revert the changes and notify the user.
             console.error("Optimistic save failed. Reverting UI.", error);
             setMapStatus('Save Failed!', '#e74c3c');
             alert(`Failed to save map change for chunk ${chunkKey}. Reverting change.`);
 
-            // Revert the data in memory
             chunkData[localTY][localTX] = originalTileId;
             chunkCache.set(chunkKey, chunkData);
             chunkImageCache.remove(chunkKey);
 
-            // Redraw the chunk and minimap with the original data
             (async () => {
                 const oldImage = mapLayer.findOne(`[chunkKey="${chunkKey}"]`);
                 const chunkMeta = { key: chunkKey, x: cx * CHUNK_SIZE * PIXEL_SIZE, y: cy * CHUNK_SIZE * PIXEL_SIZE };
                 if (oldImage) oldImage.destroy();
                 
-                const revertedImage = await renderChunkToImage(chunkMeta); // Renders with original data
+                const revertedImage = await renderChunkToImage(chunkMeta);
                 if (revertedImage) {
                     chunkImageCache.set(chunkKey, revertedImage);
                     mapLayer.add(revertedImage);
@@ -326,7 +319,6 @@ document.addEventListener('DOMContentLoaded', () => {
             drawVisibleWorld();
         });
 
-        // Use the new optimistic handler
         stage.on('click tap', handleMapClick);
 
         stage.on('mousemove', async (e) => {
@@ -382,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
         paletteContainer.querySelector(`[data-color="${currentColor}"]`).classList.add('selected');
     }
 
-    // --- 8. MINIMAP LOGIC (Split local update from server save) ---
+    // --- 8. MINIMAP LOGIC (Refactored to use a dedicated canvas) ---
     async function setupMinimap() {
         minimapStage = new Konva.Stage({ container: 'minimap', width: MINIMAP_DISPLAY_SIZE, height: MINIMAP_DISPLAY_SIZE });
         minimapLayer = new Konva.Layer();
@@ -406,17 +398,27 @@ document.addEventListener('DOMContentLoaded', () => {
     
     async function drawMinimapBackground() {
         setMapStatus('Minimap...', '#f1c40f');
+        
+        // *** FIX: Create and configure the off-screen canvas for the minimap data
+        minimapCanvas = document.createElement('canvas');
+        minimapCanvas.width = MINIMAP_WIDTH_CHUNKS;
+        minimapCanvas.height = MINIMAP_HEIGHT_CHUNKS;
+        const context = minimapCanvas.getContext('2d');
+
         const response = await fetch(API_URL_MINIMAP);
         const cachedImageURL = await response.text();
 
         if (cachedImageURL) {
-            minimapImage = await createKonvaImageFromURL(cachedImageURL);
+            // *** FIX: Load the existing image data and draw it onto our managed canvas
+            const img = new Image();
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+                img.src = cachedImageURL;
+            });
+            context.drawImage(img, 0, 0, MINIMAP_WIDTH_CHUNKS, MINIMAP_HEIGHT_CHUNKS);
         } else {
             console.log("Generating new shared minimap image (this may take a moment)...");
-            const offscreenCanvas = document.createElement('canvas');
-            offscreenCanvas.width = MINIMAP_WIDTH_CHUNKS;
-            offscreenCanvas.height = MINIMAP_HEIGHT_CHUNKS;
-            const context = offscreenCanvas.getContext('2d');
             for (let cy = 0; cy < MINIMAP_HEIGHT_CHUNKS; cy++) {
                 for (let cx = 0; cx < MINIMAP_WIDTH_CHUNKS; cx++) {
                     const chunkData = await getChunkData(`${cx},${cy}`);
@@ -424,12 +426,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     context.fillRect(cx, cy, 1, 1);
                 }
             }
-            const dataURL = offscreenCanvas.toDataURL();
+            const dataURL = minimapCanvas.toDataURL();
             await fetch(API_URL_MINIMAP, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: dataURL });
-            minimapImage = await createKonvaImageFromURL(dataURL);
             console.log("Minimap image generated and cached on server.");
         }
-        minimapImage.setAttrs({ width: MINIMAP_DISPLAY_SIZE, height: MINIMAP_DISPLAY_SIZE, listening: false, zIndex: 0 });
+        
+        // *** FIX: Create the Konva.Image using our managed canvas as the source
+        minimapImage = new Konva.Image({
+            image: minimapCanvas, // Use the canvas element directly
+            width: MINIMAP_DISPLAY_SIZE,
+            height: MINIMAP_DISPLAY_SIZE,
+            listening: false,
+            zIndex: 0
+        });
+        
         minimapLayer.add(minimapImage);
         minimapLayer.batchDraw();
         setMapStatus('Idle', '#2ecc71');
@@ -448,24 +458,20 @@ document.addEventListener('DOMContentLoaded', () => {
         minimapLayer.batchDraw();
     }
     
-    /**
-     * NEW: Updates the minimap pixel on the local canvas instantly. Does NOT save to server.
-     */
     function updateLocalMinimapPixel(cx, cy, chunkData) {
-        if (!minimapImage) return;
-        const canvas = minimapImage.image();
-        const context = canvas.getContext('2d');
+        if (!minimapCanvas) return;
+        // *** FIX: Draw directly onto the managed canvas
+        const context = minimapCanvas.getContext('2d');
         context.fillStyle = calculateChunkAverageColor(chunkData);
         context.fillRect(cx, cy, 1, 1);
-        minimapLayer.batchDraw(); // Redraw the layer to show the change
+        // Redraw the Konva layer. Konva will see the source canvas has changed and update the view.
+        minimapLayer.batchDraw(); 
     }
 
-    /**
-     * NEW: Saves the entire current state of the minimap canvas to the server.
-     */
     async function saveMinimapToServer() {
-        if (!minimapImage) return;
-        const dataURL = minimapImage.image().toDataURL();
+        if (!minimapCanvas) return;
+        // *** FIX: Get data URL from our managed canvas. This will now work correctly.
+        const dataURL = minimapCanvas.toDataURL();
         await fetch(API_URL_MINIMAP, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: dataURL });
     }
 
@@ -481,4 +487,4 @@ document.addEventListener('DOMContentLoaded', () => {
     
     mapTabButton.addEventListener('click', initializeMap, { once: true });
 });
-// --- END OF MODIFIED FILE: map.js ---
+// --- END OF CORRECTED FILE: map.js ---
