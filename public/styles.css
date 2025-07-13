@@ -619,3 +619,9 @@ div.awesomplete > ul mark {
     border: 1px solid #444;
     cursor: crosshair;
 }
+
+#map-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
