@@ -19,16 +19,82 @@ document.addEventListener('DOMContentLoaded', () => {
     const MINIMAP_HEIGHT_CHUNKS = Math.ceil(WORLD_HEIGHT_IN_TILES / CHUNK_SIZE);
     const MINIMAP_DISPLAY_SIZE = 250;
 
-    const tileLegend = {
-        0: { name: 'Deep Water', color: '#2980b9' }, 1: { name: 'Water', color: '#3498db' },
-        2: { name: 'Sand', color: '#f1c40f' }, 3: { name: 'Grass', color: '#2ecc71' },
-        4: { name: 'Forest', color: '#16a085' }, 5: { name: 'Rock', color: '#95a5a6' },
-        6: { name: 'Player Red', color: '#e74c3c' },
-    };
+const tileLegend = {
+    // --- Water Tiles ---
+    0: { name: 'Deep Water', color: '#2980b9' },
+    1: { name: 'Ocean', color: '#1565C0' },
+    2: { name: 'Coastal Water', color: '#03A9F4' },
+    3: { name: 'Shallow Water', color: '#4FC3F7' },
+    4: { name: 'Coral Reef', color: '#E040FB' },
+    5: { name: 'Icy Water', color: '#B2EBF2' },
+    6: { name: 'Murky Swamp Water', color: '#00695C' },
+    7: { name: 'Water', color: '#3498db' }, // <– Newly added generic water
+
+    // --- Sand / Soil Tiles ---
+    20: { name: 'Beach Sand', color: '#FFF59D' },
+    21: { name: 'Desert Sand', color: '#FFCA28' },
+    22: { name: 'Dirt', color: '#8D6E63' },
+    23: { name: 'Mud', color: '#5D4037' },
+    24: { name: 'Clay', color: '#BCAAA4' },
+    25: { name: 'Gravel', color: '#A1887F' },
+    26: { name: 'Sand', color: '#f1c40f' }, // <– Newly added generic sand
+
+    // --- Grassland Tiles ---
+    40: { name: 'Lush Grass', color: '#4CAF50' },
+    41: { name: 'Plains Grass', color: '#8BC34A' },
+    42: { name: 'Dry Grass', color: '#CDDC39' },
+    43: { name: 'Savanna', color: '#D4E157' },
+    44: { name: 'Steppe', color: '#A4B160' },
+    45: { name: 'Grass', color: '#2ecc71' }, // <– Newly added generic grass
+
+    // --- Forest Tiles ---
+    60: { name: 'Temperate Forest', color: '#2E7D32' },
+    61: { name: 'Boreal Forest (Taiga)', color: '#1B5E20' },
+    62: { name: 'Jungle', color: '#00796B' },
+    63: { name: 'Enchanted Forest', color: '#673AB7' },
+    64: { name: 'Autumn Forest', color: '#EF6C00' },
+    65: { name: 'Dead Forest', color: '#795548' },
+    66: { name: 'Forest', color: '#16a085' }, // <– Newly added generic forest
+
+    // --- Rocky / Mountain Tiles ---
+    80: { name: 'Stone Ground', color: '#BDBDBD' },
+    81: { name: 'Rock', color: '#95a5a6' },
+    82: { name: 'Mountain', color: '#616161' },
+    83: { name: 'Volcanic Rock', color: '#424242' },
+    84: { name: 'Snowy Peak', color: '#FAFAFA' },
+
+    // --- Snow / Cold Biomes ---
+    100: { name: 'Snow', color: '#F5F5F5' },
+    101: { name: 'Ice Sheet', color: '#E1F5FE' },
+    102: { name: 'Tundra', color: '#DCE775' },
+    103: { name: 'Wasteland', color: '#9E9D24' },
+    104: { name: 'Barren Land', color: '#A1887F' },
+    105: { name: 'Scorched Earth', color: '#3E2723' },
+
+    // --- Magical / Exotic ---
+    120: { name: 'Lava', color: '#E65100' },
+    121: { name: 'Magma', color: '#FF3D00' },
+    122: { name: 'Corrupted Land', color: '#6A1B9A' },
+    123: { name: 'Crystal Fields', color: '#00E5FF' },
+    124: { name: 'Shadowlands', color: '#212121' },
+
+    // --- Man-made / Civilization ---
+    200: { name: 'Cobblestone Road', color: '#A9A9A9' },
+    201: { name: 'Wooden Floor', color: '#A1887F' },
+    202: { name: 'Stone Wall', color: '#6E6E6E' },
+    203: { name: 'City Pavement', color: '#90A4AE' },
+    204: { name: 'Farmland', color: '#AFB42B' },
+    205: { name: 'Ruin', color: '#B0BEC5' },
+};
+
     const colorToTileIdMap = new Map();
-    for (const id in tileLegend) { colorToTileIdMap.set(tileLegend[id].color, parseInt(id)); }
+    Object.entries(tileLegend).forEach(([id, tile]) => colorToTileIdMap.set(tile.color, parseInt(id)));
     let currentColor = tileLegend[3].color;
 
+    let recentTiles = [];
+    const RECENT_TILES_KEY = 'mapEditor_recentTiles';
+    const MAX_RECENT_TILES = 8;
+	
     // --- 2. HELPERS (LRU CACHE ONLY) ---
     class LRUCache {
         constructor(maxSize) { this.maxSize = maxSize; this.cache = new Map(); }
@@ -55,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastTooltipCoord = '';
 
     let minimapStage, minimapLayer, minimapViewportRect, minimapImage;
-    let minimapCanvas; // *** FIX: A dedicated canvas for minimap data
+    let minimapCanvas;
 
     const initializeMap = async () => {
         if (isMapInitialized) return;
@@ -358,20 +424,114 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setMapStatus(text, color) { const el = document.getElementById('map-status'); if(el) {el.textContent = text; el.style.color = color;} }
+	
+    function loadRecentTiles() {
+        const storedTiles = localStorage.getItem(RECENT_TILES_KEY);
+        if (storedTiles) {
+            recentTiles = JSON.parse(storedTiles);
+        }
+    }
+
+    function updateRecentTiles(tileId) {
+        recentTiles = recentTiles.filter(id => id !== tileId); // Remove if exists
+        recentTiles.unshift(tileId); // Add to the front
+        if (recentTiles.length > MAX_RECENT_TILES) {
+            recentTiles.length = MAX_RECENT_TILES; // Trim to max size
+        }
+        localStorage.setItem(RECENT_TILES_KEY, JSON.stringify(recentTiles));
+        renderRecentTiles();
+    }
+    
+    function renderRecentTiles() {
+        const recentContainer = document.getElementById('palette-recent');
+        recentContainer.innerHTML = '';
+        recentTiles.forEach(tileId => {
+            if (!tileLegend[tileId]) return;
+            const tile = tileLegend[tileId];
+            const colorBox = document.createElement('div');
+            colorBox.className = 'color-box';
+            colorBox.style.backgroundColor = tile.color;
+            colorBox.dataset.color = tile.color;
+            colorBox.title = tile.name;
+            colorBox.addEventListener('click', () => selectPaletteColor(tile.color));
+            recentContainer.appendChild(colorBox);
+        });
+        highlightSelectedColor();
+    }
+
+    function selectPaletteColor(color) {
+        currentColor = color;
+        const tileId = colorToTileIdMap.get(color);
+        if(tileId !== undefined) {
+            updateRecentTiles(tileId);
+        }
+        highlightSelectedColor();
+    }
+    
+    function highlightSelectedColor() {
+        document.querySelectorAll('.color-box').forEach(box => {
+            if (box.dataset.color === currentColor) {
+                box.classList.add('selected');
+            } else {
+                box.classList.remove('selected');
+            }
+        });
+    }
+
     function createUIPalette() {
         const paletteContainer = document.getElementById('map-palette');
-        Object.values(tileLegend).forEach((tile) => {
-            const colorBox = document.createElement('div');
-            colorBox.className = 'color-box'; colorBox.style.backgroundColor = tile.color;
-            colorBox.dataset.color = tile.color;
-            colorBox.addEventListener('click', () => {
-                currentColor = tile.color;
-                paletteContainer.querySelectorAll('.color-box').forEach(box => box.classList.remove('selected'));
-                colorBox.classList.add('selected');
+        const fullPaletteContainer = document.getElementById('palette-full');
+        const toggleBtn = document.getElementById('palette-toggle-btn');
+
+        // Group tiles by category for structured display
+        const tileGroups = {
+            "Water": [0, 1, 2, 3, 4, 5, 6],
+            "Terrain": [20, 21, 22, 23, 24, 25],
+            "Grassland": [40, 41, 42, 43, 44],
+            "Forest": [60, 61, 62, 63, 64, 65],
+            "Stone & Mountain": [80, 81, 82, 83, 84],
+            "Exotic & Extreme": [100, 101, 102, 103, 104, 105, 120, 121, 122, 123, 124],
+            "Man-Made": [200, 201, 202, 203, 204, 205],
+        };
+
+        for (const [groupName, tileIds] of Object.entries(tileGroups)) {
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'palette-group';
+            
+            const title = document.createElement('h4');
+            title.className = 'palette-group-title';
+            title.textContent = groupName;
+            groupDiv.appendChild(title);
+
+            const gridDiv = document.createElement('div');
+            gridDiv.className = 'palette-grid';
+
+            tileIds.forEach(id => {
+                if (!tileLegend[id]) return;
+                const tile = tileLegend[id];
+                const colorBox = document.createElement('div');
+                colorBox.className = 'color-box';
+                colorBox.style.backgroundColor = tile.color;
+                colorBox.dataset.color = tile.color;
+                colorBox.title = tile.name;
+                colorBox.addEventListener('click', () => selectPaletteColor(tile.color));
+                gridDiv.appendChild(colorBox);
             });
-            paletteContainer.appendChild(colorBox);
+
+            groupDiv.appendChild(gridDiv);
+            fullPaletteContainer.appendChild(groupDiv);
+        }
+        
+        // Initial render of recent tiles
+        renderRecentTiles();
+        
+        // Setup toggle button
+        toggleBtn.addEventListener('click', () => {
+            paletteContainer.classList.toggle('expanded');
+            toggleBtn.textContent = paletteContainer.classList.contains('expanded') 
+                ? 'Hide Full Palette' 
+                : 'Show Full Palette';
         });
-        paletteContainer.querySelector(`[data-color="${currentColor}"]`).classList.add('selected');
     }
 
     // --- 8. MINIMAP LOGIC (Refactored to use a dedicated canvas) ---
