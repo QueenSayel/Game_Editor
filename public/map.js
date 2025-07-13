@@ -93,7 +93,7 @@ const tileLegend = {
 
     let recentTiles = [];
     const RECENT_TILES_KEY = 'mapEditor_recentTiles';
-    const MAX_RECENT_TILES = 8;
+    const MAX_RECENT_TILES = 6;
 	
     // --- 2. HELPERS (LRU CACHE ONLY) ---
     class LRUCache {
