@@ -611,6 +611,7 @@ div.awesomplete > ul mark {
 #palette-toggle-btn {
     font-size: 0.8em;
     padding: 4px 8px;
+    min-width: 76px;
 }
 
 .palette-grid {
