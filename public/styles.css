@@ -627,7 +627,6 @@ div.awesomplete > ul mark {
 }
 
 #palette-full-container {
-    flex-basis: 0;
     flex-grow: 0;
     overflow-y: hidden;
     opacity: 0;
@@ -637,7 +636,6 @@ div.awesomplete > ul mark {
 
 #map-palette.palette-container.expanded #palette-full-container {
     flex-grow: 1;
-    flex-basis: auto;
     opacity: 1;
     visibility: visible;
     overflow-y: auto;
