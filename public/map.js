@@ -530,8 +530,8 @@ const tileLegend = {
         toggleBtn.addEventListener('click', () => {
             paletteContainer.classList.toggle('expanded');
             toggleBtn.textContent = paletteContainer.classList.contains('expanded') 
-                ? 'Hide Full Palette' 
-                : 'Show Full Palette';
+                ? 'Hide Palette' 
+                : 'Show Palette';
         });
     }
 
