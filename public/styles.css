@@ -632,12 +632,7 @@ div.awesomplete > ul mark {
     overflow-y: hidden;
     opacity: 0;
     visibility: hidden;
-    /*
-      HIDING ANIMATION (when .expanded is removed):
-      1. Animate opacity to 0 over a FAST 0.15s.
-      2. After the opacity animation is done (0.15s), set visibility to hidden.
-    */
-    transition: opacity 0.15s ease-out, visibility 0s linear 0.15s;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
 }
 
 #map-palette.palette-container.expanded #palette-full-container {
@@ -646,15 +641,6 @@ div.awesomplete > ul mark {
     opacity: 1;
     visibility: visible;
     overflow-y: auto;
-    scrollbar-width: none;
-    /*
-      SHOWING ANIMATION (when .expanded is added):
-      1. Set visibility to visible immediately.
-      2. Wait 0.1s for the parent to start expanding.
-      3. Animate opacity to 1 over 0.2s.
-      (Total parent animation is 0.3s, so this looks smooth).
-    */
-    transition: opacity 0.2s ease-in 0.1s;
 }
 
 #map-palette.palette-container.expanded #palette-full-container::-webkit-scrollbar {
