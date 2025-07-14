@@ -631,7 +631,7 @@ div.awesomplete > ul mark {
     overflow-y: hidden;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    transition: opacity 0.3s ease-in-out, visibility 0s linear 0.3s;
 }
 
 #map-palette.palette-container.expanded #palette-full-container {
@@ -640,6 +640,7 @@ div.awesomplete > ul mark {
     opacity: 1;
     visibility: visible;
     overflow-y: auto;
+    transition: opacity 0.3s ease-in-out;
 }
 
 .palette-group {
@@ -648,7 +649,7 @@ div.awesomplete > ul mark {
 
 .palette-group-title {
     font-weight: bold;
-    color: var(--primary-color);
+    color: var(--text-color);
     padding: 0 12px 8px 12px;
     margin-top: 5px;
     border-bottom: 1px solid var(--border-color);
