@@ -611,18 +611,6 @@ div.awesomplete > ul mark {
 #palette-toggle-btn {
     font-size: 0.8em;
     padding: 4px 8px;
-    display: grid;
-    place-items: center;
-}
-
-#palette-toggle-btn::before {
-    content: 'Hide Palette';
-    visibility: hidden;
-    grid-area: 1 / 1;
-}
-
-#palette-toggle-btn > * {
-    grid-area: 1 / 1;
 }
 
 .palette-grid {
