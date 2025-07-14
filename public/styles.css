@@ -640,6 +640,11 @@ div.awesomplete > ul mark {
     opacity: 1;
     visibility: visible;
     overflow-y: auto;
+    scrollbar-width: none;
+}
+
+#map-palette.palette-container.expanded #palette-full-container::-webkit-scrollbar {
+    display: none;
 }
 
 .palette-group {
