@@ -523,6 +523,7 @@ const tileLegend = {
         }
         
         // Initial render of recent tiles
+	loadRecentTiles();
         renderRecentTiles();
         
         // Setup toggle button
