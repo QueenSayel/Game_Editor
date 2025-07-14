@@ -630,12 +630,15 @@ div.awesomplete > ul mark {
     flex-grow: 0;
     overflow-y: hidden;
     opacity: 0;
+    visibility: hidden;
     transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
 }
 
 #map-palette.palette-container.expanded #palette-full-container {
     flex-grow: 1;
+    flex-basis: auto;
     opacity: 1;
+    visibility: visible;
     overflow-y: auto;
 }
 
