@@ -1,0 +1,99 @@
+function Encrypt-String {
+    param([string]$PlainText, [string]$Key)
+    if ([string]::IsNullOrWhiteSpace($PlainText)) { return "" }
+
+    try {
+        $keyBytes = [System.Convert]::FromBase64String($Key)
+        $plainTextBytes = [System.Text.Encoding]::UTF8.GetBytes($PlainText)
+
+        $aes = [System.Security.Cryptography.Aes]::Create()
+        $aes.Key = $keyBytes
+        $aes.Mode = [System.Security.Cryptography.CipherMode]::CBC
+        $aes.Padding = [System.Security.Cryptography.PaddingMode]::PKCS7
+        $aes.GenerateIV() # Generate a new, random IV for each encryption
+        $iv = $aes.IV
+
+        $encryptor = $aes.CreateEncryptor()
+        $encryptedBytes = $encryptor.TransformFinalBlock($plainTextBytes, 0, $plainTextBytes.Length)
+
+        # Prepend the IV to the encrypted data for use during decryption
+        $resultBytes = $iv + $encryptedBytes
+        return [System.Convert]::ToBase64String($resultBytes)
+    } catch {
+        Write-Host "AES Encryption failed: $($_.Exception.Message)" -ForegroundColor Red
+        return $PlainText
+    }
+}
+
+function Decrypt-String {
+    param([string]$EncryptedBase64, [string]$Key)
+    if ([string]::IsNullOrWhiteSpace($EncryptedBase64)) { return "" }
+
+    try {
+        $keyBytes = [System.Convert]::FromBase64String($Key)
+        $allBytes = [System.Convert]::FromBase64String($EncryptedBase64)
+
+        # Extract the IV (first 16 bytes)
+        $iv = $allBytes[0..15]
+        $encryptedBytes = $allBytes[16..$allBytes.Length]
+
+        $aes = [System.Security.Cryptography.Aes]::Create()
+        $aes.Key = $keyBytes
+        $aes.IV = $iv
+        $aes.Mode = [System.Security.Cryptography.CipherMode]::CBC
+        $aes.Padding = [System.Security.Cryptography.PaddingMode]::PKCS7
+
+        $decryptor = $aes.CreateDecryptor()
+        $decryptedBytes = $decryptor.TransformFinalBlock($encryptedBytes, 0, $encryptedBytes.Length)
+        
+        return [System.Text.Encoding]::UTF8.GetString($decryptedBytes)
+    } catch {
+        # Gracefully handle non-encrypted or malformed data
+        return $EncryptedBase64
+    }
+}
+
+
+$migrationMarker = Join-Path $alertsDirPath "_migrated_to_encrypted.marker"
+if (-not (Test-Path $migrationMarker)) {
+    Write-Host "------------------------------------------------------------" -ForegroundColor Cyan
+    Write-Host "ENCRYPTION MIGRATION: Plaintext alerts found. Starting one-time encryption process." -ForegroundColor Cyan
+    $alertFiles = Get-ChildItem -Path $alertsDirPath -Filter "*.json"
+    $migratedCount = 0
+    $errorCount = 0
+
+    foreach ($file in $alertFiles) {
+        try {
+            $alert = Get-Content $file.FullName -Raw | ConvertFrom-Json
+            
+            $isLikelyEncrypted = $false
+            try { [System.Convert]::FromBase64String($alert.content) | Out-Null; $isLikelyEncrypted = $true } catch {}
+
+            if (-not $isLikelyEncrypted) {
+                # Encrypt fields
+                $alert.content = Encrypt-String -PlainText $alert.content -Key $encryptionKey
+                $alert.category = Encrypt-String -PlainText $alert.category -Key $encryptionKey
+                $alert.difficulty = Encrypt-String -PlainText $alert.difficulty -Key $encryptionKey
+                
+                # FIX: Safely add or update the withdrawalReason property
+                $currentReason = if ($alert.PSObject.Properties['withdrawalReason']) { $alert.withdrawalReason } else { "" }
+                $encryptedReason = Encrypt-String -PlainText $currentReason -Key $encryptionKey
+                Add-Member -InputObject $alert -MemberType NoteProperty -Name 'withdrawalReason' -Value $encryptedReason -Force
+
+                $alert | ConvertTo-Json -Depth 5 | Set-Content -Path $file.FullName -Encoding UTF8
+                $migratedCount++
+            }
+        } catch {
+            Write-Host "Failed to migrate file: $($file.Name). Error: $($_.Exception.Message)" -ForegroundColor Red
+            $errorCount++
+        }
+    }
+    
+    if ($errorCount -eq 0) {
+        New-Item -Path $migrationMarker -ItemType File | Out-Null
+        Write-Host "Successfully encrypted $migratedCount alert files. Migration complete." -ForegroundColor Green
+    } else {
+        Write-Host "Migration finished with $errorCount errors. Please review the logs above." -ForegroundColor Red
+    }
+    Write-Host "------------------------------------------------------------" -ForegroundColor Cyan
+}
