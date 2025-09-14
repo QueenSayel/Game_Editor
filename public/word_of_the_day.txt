@@ -1,1 +1,175 @@
 Anemoia! To feel nostalgic towards times you have never experienced yourself. It is a noun.
+
+
+Step 1: Add a One-Time Migration Script for Responses
+Place this new code block directly after the "Answers Migration" block you just added. This will automatically encrypt any existing plaintext data in responses.json the first time the server runs.
+
+# ... (after the answers migration block)
+
+# --- START: NEW ONE-TIME MIGRATION FOR RESPONSES ---
+$responsesMigrationMarker = Join-Path $dataPath "_responses_migrated_to_encrypted.marker"
+
+if (-not (Test-Path $responsesMigrationMarker)) {
+    Write-Host "------------------------------------------------------------" -ForegroundColor DarkCyan
+    Write-Host "ENCRYPTION MIGRATION: Plaintext exam responses found. Starting one-time encryption." -ForegroundColor DarkCyan
+    
+    $migratedCount = 0
+    $errorCount = 0
+
+    [System.Threading.Monitor]::Enter($fileLock)
+    try {
+        # Robustly read the responses file
+        $parsedData = $null
+        if (Test-Path $responsesPath -PathType Leaf) {
+            $fileContent = Get-Content $responsesPath -Raw
+            if (-not [string]::IsNullOrWhiteSpace($fileContent)) { 
+                $parsedData = $fileContent | ConvertFrom-Json 
+            }
+        }
+        $allResponses = @($parsedData)
+
+        if ($allResponses.Count -gt 0) {
+            foreach ($responseItem in $allResponses) {
+                try {
+                    # Check if the response string is likely plaintext.
+                    $isLikelyEncrypted = $true
+                    try { 
+                        [System.Convert]::FromBase64String($responseItem.ResponseString) | Out-Null 
+                    } catch { 
+                        $isLikelyEncrypted = $false 
+                    }
+
+                    if (-not $isLikelyEncrypted) {
+                        $responseItem.ResponseString = Encrypt-String -PlainText $responseItem.ResponseString -Key $encryptionKey
+                        $migratedCount++
+                    }
+                } catch {
+                    Write-Host "Failed to migrate a response record. Error: $($_.Exception.Message)" -ForegroundColor Red
+                    $errorCount++
+                }
+            }
+
+            # If any changes were made, write the entire file back
+            if ($migratedCount -gt 0) {
+                ConvertTo-Json -InputObject $allResponses -Depth 5 | Set-Content -Path $responsesPath -Encoding UTF8
+            }
+        }
+
+        if ($errorCount -eq 0) {
+            New-Item -Path $responsesMigrationMarker -ItemType File | Out-Null
+            Write-Host "Successfully encrypted $migratedCount exam response records. Migration complete." -ForegroundColor Green
+        } else {
+            Write-Host "Responses migration finished with $errorCount errors. Please review the logs." -ForegroundColor Red
+        }
+
+    } catch {
+        Write-Host "FATAL MIGRATION ERROR for responses.json: $($_.Exception.Message)" -ForegroundColor Red
+    } finally {
+        if ([System.Threading.Monitor]::IsEntered($fileLock)) {
+            [System.Threading.Monitor]::Exit($fileLock)
+        }
+    }
+    Write-Host "------------------------------------------------------------" -ForegroundColor DarkCyan
+}
+# --- END: NEW ONE-TIME MIGRATION FOR RESPONSES ---
+
+# --- Start HTTP Listener ---
+$listener = New-Object System.Net.HttpListener
+# ... (rest of your script)
+
+Step 2: Modify the /save-exam-response Endpoint
+Now, let's modify the endpoint that saves the data to encrypt it first.
+Find your existing /save-exam-response block and replace it with this new version:
+
+# --- Save Exam Response ---
+elseif ($localPath -eq 'save-exam-response' -and $request.HttpMethod -eq 'POST') {
+    try {
+        $data = (New-Object System.IO.StreamReader($request.InputStream)).ReadToEnd() | ConvertFrom-Json
+        if (-not $data.examId -or -not $data.responseString) { Send-ErrorResponse $response 400 "Missing examId or responseString"; continue }
+
+        [System.Threading.Monitor]::Enter($fileLock)
+        try {
+            # Robustly read the file to guarantee an array
+            $parsedData = $null
+            if (Test-Path $responsesPath -PathType Leaf) {
+                $fileContent = Get-Content $responsesPath -Raw
+                if (-not [string]::IsNullOrWhiteSpace($fileContent)) { 
+                    $parsedData = $fileContent | ConvertFrom-Json 
+                }
+            }
+            $allResponses = @($parsedData)
+
+            # Check if a response for this exam already exists
+            $existingResponse = $allResponses | Where-Object { $_.ExamID -eq $data.examId }
+
+            # --- ENCRYPT THE INCOMING DATA ---
+            $encryptedResponseString = Encrypt-String -PlainText $data.responseString -Key $encryptionKey
+
+            if ($existingResponse) {
+                # Update the existing response with encrypted data
+                $existingResponse.ResponseString = $encryptedResponseString
+                $existingResponse.Timestamp = (Get-Date -Format "o")
+            } else {
+                # Add a new response entry with encrypted data
+                $allResponses += [PSCustomObject]@{
+                    ExamID         = $data.examId
+                    ResponseString = $encryptedResponseString
+                    Timestamp      = (Get-Date -Format "o")
+                }
+            }
+            
+            # Save the updated array back to the file
+            ConvertTo-Json -InputObject $allResponses -Depth 5 | Set-Content -Path $responsesPath -Encoding UTF8
+            Send-JsonResponse $response @{status="success"}
+        } finally { 
+            [System.Threading.Monitor]::Exit($fileLock) 
+        }
+    } catch { 
+        Send-ErrorResponse $response 500 "Failed to save exam response: $($_.Exception.Message)" 
+    }
+    continue
+}
+
+Step 3: Modify the /get-exam-response Endpoint
+Finally, let's modify the endpoint that retrieves a response to decrypt it before sending it back to the client.
+Find your existing /get-exam-response block and replace it with this new version:
+
+# --- Get Exam Response ---
+elseif ($localPath -eq 'get-exam-response' -and $request.HttpMethod -eq 'GET') {
+    try {
+        $examId = $request.QueryString.Get("examId")
+        if (-not $examId) { Send-ErrorResponse $response 400 "Missing examId query parameter"; continue }
+
+        [System.Threading.Monitor]::Enter($fileLock)
+        try {
+            $parsedData = $null
+            if (Test-Path $responsesPath -PathType Leaf) {
+                $fileContent = Get-Content $responsesPath -Raw
+                if (-not [string]::IsNullOrWhiteSpace($fileContent)) {
+                    $parsedData = $fileContent | ConvertFrom-Json
+                }
+            }
+            $allResponses = @($parsedData)
+
+            $foundResponse = $allResponses | Where-Object { $_.ExamID -eq $examId } | Select-Object -First 1
+            
+            if ($foundResponse) {
+                # --- DECRYPT THE DATA BEFORE SENDING ---
+                # Create a copy to avoid modifying the in-memory object
+                $decryptedResponse = $foundResponse.psobject.Copy()
+                $decryptedResponse.ResponseString = Decrypt-String -EncryptedBase64 $foundResponse.ResponseString -Key $encryptionKey
+                
+                # Send back the decrypted response object
+                Send-JsonResponse $response $decryptedResponse
+            } else {
+                # Send an empty object if not found
+                Send-JsonResponse $response @{}
+            }
+        } finally { 
+            [System.Threading.Monitor]::Exit($fileLock) 
+        }
+    } catch { 
+        Send-ErrorResponse $response 500 "Failed to get exam response: $($_.Exception.Message)" 
+    }
+    continue
+}
